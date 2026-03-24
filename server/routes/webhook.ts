@@ -14,54 +14,89 @@ function generateToken() {
   return crypto.randomBytes(16).toString("hex");
 }
 
+async function sendPortalLink(botToken: string, chatId: number | string, token: string, isNew: boolean = false) {
+  const domain = CONFIG.APP_URL;
+  const link = `${domain}/send/${token}`;
+  const title = isNew ? "🔄 <b>Your Portal Link has been Rotated!</b>" : "🚀 <b>Your Private Message Portal is Ready!</b>";
+
+  await sendTelegramMessage(
+    botToken,
+    chatId,
+    `${title}\n\n` +
+    `Use this unique link to send messages from any device:\n\n` +
+    `<code>${link}</code>\n\n` +
+    `<b>Commands:</b>\n` +
+    `• <code>/newlink</code> - Rotate your token (old link will break)\n` +
+    `• <code>/revoke</code> - Deactivate your current link entirely\n` +
+    `• <code>/register [token]</code> - Link a group/channel (use in the group)`,
+    "HTML",
+    {
+      inline_keyboard: [[{ text: "🌐 Open Portal", url: link }]],
+    }
+  );
+}
+
 async function handleStart(botToken: string, chatId: number | string) {
-  // Check if Redis is configured
   if (!CONFIG.REDIS_URL || !CONFIG.REDIS_TOKEN) {
-    console.error("❌ Redis is not configured. Cannot generate token.");
-    await sendTelegramMessage(botToken, chatId, "❌ <b>Service Error:</b> The system is not fully configured (Redis missing). Please contact the administrator.");
+    await sendTelegramMessage(botToken, chatId, "❌ <b>Service Error:</b> Redis missing.");
     return;
   }
 
   try {
-    // Check if user already has a token
     let token = (await redis.get(`user:${chatId}`)) as string | null;
-
     if (!token) {
       token = generateToken();
-      const EXPIRY_SECONDS = 60 * 60 * 24 * 30 * 6; // 6 months
-      
-      const initialChats = [
-        { id: chatId.toString(), name: "Personal", type: "private" }
-      ];
-      
-      // store mapping as JSON
-      await redis.set(`token:${token}`, JSON.stringify(initialChats), { ex: EXPIRY_SECONDS });
-      // reverse mapping
-      await redis.set(`user:${chatId}`, token, { ex: EXPIRY_SECONDS });
+      const initialChats = [{ id: chatId.toString(), name: "Personal", type: "private" }];
+      const EXPIRY = 60 * 60 * 24 * 30 * 6;
+      await redis.set(`token:${token}`, JSON.stringify(initialChats), { ex: EXPIRY });
+      await redis.set(`user:${chatId}`, token, { ex: EXPIRY });
+    }
+    await sendPortalLink(botToken, chatId, token);
+  } catch (err) {
+    console.error("Error in handleStart:", err);
+    await sendTelegramMessage(botToken, chatId, "❌ <b>Error:</b> Database issue.");
+  }
+}
+
+async function handleNewLink(botToken: string, chatId: number | string) {
+  try {
+    const oldToken = (await redis.get(`user:${chatId}`)) as string | null;
+    let chats = [{ id: chatId.toString(), name: "Personal", type: "private" }];
+
+    if (oldToken) {
+      const data = await redis.get(`token:${oldToken}`) as string | null;
+      if (data) {
+        try {
+          const parsed = JSON.parse(data);
+          if (Array.isArray(parsed)) chats = parsed;
+        } catch (e) {}
+      }
+      await redis.del(`token:${oldToken}`);
     }
 
-    // Use domain from CONFIG
-    const domain = CONFIG.APP_URL;
-    const link = `${domain}/send/${token}`;
+    const newToken = generateToken();
+    const EXPIRY = 60 * 60 * 24 * 30 * 6;
+    await redis.set(`token:${newToken}`, JSON.stringify(chats), { ex: EXPIRY });
+    await redis.set(`user:${chatId}`, newToken, { ex: EXPIRY });
 
-    await sendTelegramMessage(
-      botToken,
-      chatId,
-      `🚀 <b>Your Private Message Portal is Ready!</b>\n\n` +
-      `Use this unique link to send messages from any device:\n\n` +
-      `<code>${link}</code>\n\n` +
-      `<b>Multi-Chat Support:</b>\n` +
-      `Add this bot to any group/channel and type <code>/register ${token}</code> to add it as a destination.`,
-      "HTML",
-      {
-        inline_keyboard: [
-          [{ text: "🌐 Open Portal", url: link }]
-        ],
-      }
-    );
+    await sendPortalLink(botToken, chatId, newToken, true);
   } catch (err) {
-    console.error("❌ Error in handleStart:", err);
-    await sendTelegramMessage(botToken, chatId, "❌ <b>Error:</b> Failed to generate your portal link.");
+    console.error("Error in handleNewLink:", err);
+    await sendTelegramMessage(botToken, chatId, "❌ <b>Error:</b> Failed to rotate token.");
+  }
+}
+
+async function handleRevoke(botToken: string, chatId: number | string) {
+  try {
+    const token = (await redis.get(`user:${chatId}`)) as string | null;
+    if (token) {
+      await redis.del(`token:${token}`);
+      await redis.del(`user:${chatId}`);
+    }
+    await sendTelegramMessage(botToken, chatId, "🛑 <b>Link Revoked.</b>\n\nYour private portal link has been deactivated. Use /start to generate a new one.");
+  } catch (err) {
+    console.error("Error in handleRevoke:", err);
+    await sendTelegramMessage(botToken, chatId, "❌ <b>Error:</b> Failed to revoke token.");
   }
 }
 
@@ -174,6 +209,10 @@ export async function handleWebhook(req: Request, res: Response) {
 
       if (text === "/start") {
         await handleStart(botToken, chat.id);
+      } else if (text === "/newlink") {
+        await handleNewLink(botToken, chat.id);
+      } else if (text === "/revoke") {
+        await handleRevoke(botToken, chat.id);
       } else if (text.startsWith("/register")) {
         const parts = text.split(" ");
         if (parts.length < 2) {
