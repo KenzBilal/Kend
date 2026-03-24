@@ -28,10 +28,11 @@ async function handleStart(botToken: string, chatId: number | string) {
 
     if (!token) {
       token = generateToken();
+      const EXPIRY_SECONDS = 60 * 60 * 24 * 30; // 30 days
       // store mapping
-      await redis.set(`token:${token}`, chatId.toString());
+      await redis.set(`token:${token}`, chatId.toString(), { ex: EXPIRY_SECONDS });
       // reverse mapping
-      await redis.set(`user:${chatId}`, token);
+      await redis.set(`user:${chatId}`, token, { ex: EXPIRY_SECONDS });
     }
 
     // Use domain from CONFIG
