@@ -23,15 +23,16 @@ async function sendPortalLink(botToken: string, chatId: number | string, token: 
     botToken,
     chatId,
     `${title}\n\n` +
-    `Use this unique link to send messages from any device:\n\n` +
-    `<code>${link}</code>\n\n` +
-    `<b>Commands:</b>\n` +
-    `• <code>/newlink</code> - Rotate your token (old link will break)\n` +
-    `• <code>/revoke</code> - Deactivate your current link entirely\n` +
-    `• <code>/register [token]</code> - Link a group/channel (use in the group)`,
+    `Use the buttons below to manage your portal access effortlessly.`,
     "HTML",
     {
-      inline_keyboard: [[{ text: "🌐 Open Portal", url: link }]],
+      inline_keyboard: [
+        [{ text: "🌐 Open Portal", url: link }],
+        [
+          { text: "🔄 Rotate Link", callback_data: `action:newlink` },
+          { text: "🛑 Revoke Link", callback_data: `action:revoke_ask` }
+        ]
+      ],
     }
   );
 }
@@ -143,6 +144,33 @@ async function handleRegister(botToken: string, chatId: number | string, token: 
   }
 }
 
+async function handleCallbackQuery(botToken: string, query: any) {
+  const chatId = query.from.id;
+  const data = query.data;
+
+  if (data === "action:newlink") {
+    await handleNewLink(botToken, chatId);
+  } else if (data === "action:revoke_ask") {
+    await sendTelegramMessage(botToken, chatId, "⚠️ <b>Are you sure?</b>\n\nThis will permanently disable your current link. You will need to type /start to get a new one.", "HTML", {
+      inline_keyboard: [
+        [{ text: "🔥 Yes, Revoke Now", callback_data: "action:revoke_confirm" }],
+        [{ text: "❌ Cancel", callback_data: "action:cancel" }]
+      ]
+    });
+  } else if (data === "action:revoke_confirm") {
+    await handleRevoke(botToken, chatId);
+  } else if (data === "action:cancel") {
+    await sendTelegramMessage(botToken, chatId, "✅ Action cancelled.");
+  }
+
+  // Always answer callback query to stop loading state
+  await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ callback_query_id: query.id }),
+  });
+}
+
 export interface TelegramUpdate {
   update_id: number;
   callback_query?: {
@@ -193,13 +221,7 @@ export async function handleWebhook(req: Request, res: Response) {
     const update: TelegramUpdate = req.body;
 
     if (update.callback_query) {
-      // Logic for callback queries (e.g., answer query)
-      const queryId = update.callback_query.id;
-      await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ callback_query_id: queryId, text: "Received" }),
-      });
+      await handleCallbackQuery(botToken, update.callback_query);
       return res.status(200).json({ ok: true });
     }
 
