@@ -28,7 +28,7 @@ export default function Home() {
   const [copyClean, setCopyClean] = useState(false);
   const [chats, setChats] = useState<any[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-  const [showDestinations, setShowDestinations] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize textarea
@@ -234,58 +234,12 @@ export default function Home() {
             <div className="relative">
               <Button 
                 variant="outline" 
-                onClick={() => setShowDestinations(!showDestinations)}
-                className={`border-white/10 hover:bg-white/10 text-xs font-bold uppercase tracking-widest h-10 px-4 rounded-xl transition-all ${showDestinations ? "bg-white/10" : "bg-white/5"}`}
+                onClick={() => setShowSidebar(true)}
+                className={`border-white/10 hover:bg-white/10 text-xs font-bold uppercase tracking-widest h-10 px-4 rounded-xl transition-all ${showSidebar ? "bg-white/10" : "bg-white/5"}`}
               >
                 <Menu className="w-4 h-4 mr-2" />
                 Dests
-                <ChevronDown className={`w-3 h-3 ml-2 transition-transform ${showDestinations ? "rotate-180" : ""}`} />
               </Button>
-              
-              <AnimatePresence>
-                {showDestinations && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-3 w-72 max-w-[calc(100vw-2rem)] bg-[#151517] border border-white/10 rounded-2xl shadow-2xl z-[100] p-2 backdrop-blur-3xl"
-                  >
-                    <div className="px-3 py-2 text-[10px] font-bold text-[#555] uppercase tracking-[0.2em] mb-1">
-                      Select Destination
-                    </div>
-                    <div className="space-y-1">
-                      {chats.map((chat) => (
-                        <button
-                          key={chat.id}
-                          onClick={() => {
-                            setSelectedChatId(chat.id);
-                            setShowDestinations(false);
-                            toast.success(`Broadcasting to ${chat.name}`);
-                          }}
-                          className={`w-full flex items-center justify-between px-3 py-3 rounded-xl transition-all group ${
-                            selectedChatId === chat.id 
-                              ? "bg-[#0088cc] text-white" 
-                              : "hover:bg-white/5 text-[#888] hover:text-white"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3 overflow-hidden">
-                            {chat.type === 'private' ? <Monitor className="w-4 h-4 shrink-0" /> : 
-                             chat.type === 'channel' ? <Hash className="w-4 h-4 shrink-0" /> : 
-                             <Users className="w-4 h-4 shrink-0" />}
-                            <span className="text-xs font-bold truncate tracking-tight">{chat.name}</span>
-                          </div>
-                          {selectedChatId === chat.id && <CheckCircle className="w-3 h-3" />}
-                        </button>
-                      ))}
-                    </div>
-                    {chats.length === 0 && (
-                      <div className="px-3 py-4 text-center text-[#555] text-[10px] font-bold">
-                        No destinations found
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
             
             <Button 
@@ -449,6 +403,102 @@ export default function Home() {
           </footer>
         </main>
       </div>
+      {/* Sidebar Component */}
+      <AnimatePresence>
+        {showSidebar && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSidebar(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
+            />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
+              className="fixed inset-y-0 right-0 w-full sm:w-[400px] bg-[#0c0c0e] border-l border-white/5 z-[101] flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.8)]"
+            >
+              {/* Sidebar Header */}
+              <div className="p-8 pb-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-[#0088cc]/10 rounded-2xl flex items-center justify-center border border-[#0088cc]/20">
+                    <Menu className="w-5 h-5 text-[#0088cc]" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold tracking-tight text-white">Relay Targets</h2>
+                    <p className="text-[10px] text-[#555] font-black uppercase tracking-widest">Active Destinations</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowSidebar(false)}
+                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:border-white/10 text-[#555] hover:text-white transition-all active:scale-90"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto px-8 py-6 space-y-3 custom-scrollbar">
+                {chats.map((chat) => (
+                  <button
+                    key={chat.id}
+                    onClick={() => {
+                      setSelectedChatId(chat.id);
+                      setShowSidebar(false);
+                      toast.success(`Target switched: ${chat.name}`);
+                    }}
+                    className={`w-full flex items-center justify-between px-5 py-5 rounded-2xl transition-all group active:scale-[0.97] border ${
+                      selectedChatId === chat.id 
+                        ? "bg-[#0088cc] border-[#0088cc] shadow-[0_8px_24px_-4px_rgba(0,136,204,0.4)] text-white" 
+                        : "bg-white/[0.02] border-white/5 hover:bg-white/5 text-[#888] hover:text-white hover:border-white/10"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4 overflow-hidden">
+                      <div className={`w-11 h-11 rounded-1.5xl flex items-center justify-center transition-all ${
+                        selectedChatId === chat.id ? "bg-white/20" : "bg-white/5 group-hover:bg-white/10"
+                      }`}>
+                        {chat.type === 'private' ? <Monitor className="w-5 h-5" /> : 
+                         chat.type === 'channel' ? <Hash className="w-5 h-5" /> : 
+                         <Users className="w-5 h-5" />}
+                      </div>
+                      <div className="text-left overflow-hidden">
+                        <div className="text-sm font-bold truncate leading-tight tracking-tight">{chat.name}</div>
+                        <div className={`text-[10px] font-bold uppercase tracking-widest opacity-60 mt-1`}>
+                          Type: {chat.type}
+                        </div>
+                      </div>
+                    </div>
+                    {selectedChatId === chat.id && <CheckCircle className="w-4 h-4" />}
+                  </button>
+                ))}
+                
+                {chats.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-20 text-center px-6">
+                    <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mb-6">
+                      <Hash className="w-10 h-10 text-[#222]" />
+                    </div>
+                    <p className="text-sm font-bold text-[#444] leading-relaxed">
+                      No destinations found.<br/>
+                      Add the bot to a group and use <b>/register</b>.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Sidebar Footer */}
+              <div className="p-8 pt-6 border-t border-white/5 space-y-6">
+                <div className="flex items-center justify-between text-[10px] font-bold text-[#333] uppercase tracking-[0.25em]">
+                  <span>Protocol Secure</span>
+                  <span>v2.4.0</span>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
