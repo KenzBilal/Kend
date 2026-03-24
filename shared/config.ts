@@ -28,4 +28,8 @@ export const CONFIG = {
   
   // Max message length for Telegram
   MAX_MESSAGE_LENGTH: 4000,
+
+  // Redis configuration
+  REDIS_URL: getEnv("UPSTASH_REDIS_REST_URL", ""),
+  REDIS_TOKEN: getEnv("UPSTASH_REDIS_REST_TOKEN", ""),
 };

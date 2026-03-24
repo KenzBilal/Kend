@@ -7,6 +7,7 @@
 import { Request, Response } from "express";
 import { sendTelegramMessage } from "../telegram.js";
 import { redis } from "../lib/redis.js";
+import { CONFIG } from "../../shared/config.js";
 import crypto from "crypto";
 
 function generateToken() {
@@ -15,7 +16,7 @@ function generateToken() {
 
 async function handleStart(botToken: string, chatId: number | string) {
   // Check if Redis is configured
-  if (!process.env.UPSTASH_REDIS_REST_URL) {
+  if (!CONFIG.REDIS_URL || !CONFIG.REDIS_TOKEN) {
     console.error("❌ Redis is not configured. Cannot generate token.");
     await sendTelegramMessage(botToken, chatId, "❌ <b>Service Error:</b> The system is not fully configured (Redis missing). Please contact the administrator.");
     return;
@@ -33,8 +34,8 @@ async function handleStart(botToken: string, chatId: number | string) {
       await redis.set(`user:${chatId}`, token);
     }
 
-    // Determine domain - prioritize APP_URL, fallback to VERCEL_URL
-    const domain = process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://kend-psi.vercel.app");
+    // Use domain from CONFIG
+    const domain = CONFIG.APP_URL;
     const link = `${domain}/send/${token}`;
 
     await sendTelegramMessage(
