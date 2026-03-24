@@ -76,6 +76,7 @@ export async function sendTelegramMessage(
   botToken: string,
   chatId: string | number,
   text: string,
+  parse_mode: string = "HTML",
   replyMarkup?: TelegramMessage["reply_markup"]
 ): Promise<TelegramResponse> {
   const url = `${TELEGRAM_API_BASE}/bot${botToken}/sendMessage`;
@@ -83,7 +84,7 @@ export async function sendTelegramMessage(
   const payload: TelegramMessage = {
     chat_id: chatId,
     text,
-    parse_mode: "HTML",
+    parse_mode: parse_mode as any,
   };
 
   if (replyMarkup) {
@@ -119,7 +120,8 @@ export async function sendTelegramMessage(
 export async function sendMultipartMessage(
   botToken: string,
   chatId: string | number,
-  chunks: string[]
+  chunks: string[],
+  parse_mode: string = "HTML"
 ): Promise<TelegramResponse[]> {
   const results: TelegramResponse[] = [];
 
@@ -132,7 +134,8 @@ export async function sendMultipartMessage(
       const result = await sendTelegramMessage(
         botToken,
         chatId,
-        prefix + chunk
+        prefix + chunk,
+        parse_mode
       );
       results.push(result);
 

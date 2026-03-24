@@ -46,6 +46,7 @@ async function handleStart(botToken: string, chatId: number | string) {
       `Use this unique link to send messages from any device:\n\n` +
       `<code>${link}</code>\n\n` +
       `<b>Security Note:</b> Never share this link. It allows anyone to send messages to this chat.`,
+      "HTML",
       {
         inline_keyboard: [
           [{ text: "🌐 Open Portal", url: link }]

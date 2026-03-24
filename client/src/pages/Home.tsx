@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
-import { Send, CheckCircle, AlertCircle, Loader2, X, Trash2, Copy, ExternalLink, Shield } from "lucide-react";
+import { Send, CheckCircle, AlertCircle, Loader2, X, Trash2, Copy, ExternalLink, Shield, Type, Code, Terminal, Hash } from "lucide-react";
 import { useParams } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ export default function Home() {
   const [status, setStatus] = useState<StatusType>("idle");
   const [statusMessage, setStatusMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [parseMode, setParseMode] = useState<"HTML" | "MarkdownV2">("HTML");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize textarea
@@ -48,6 +49,38 @@ export default function Home() {
     navigator.clipboard.writeText(window.location.href);
     toast.success("Portal link copied to clipboard");
   };
+  
+  const insertFormatting = (type: 'bold' | 'code' | 'block') => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selectedText = text.substring(start, end);
+
+    let openTag = "", closeTag = "";
+
+    if (parseMode === "HTML") {
+      if (type === 'bold') { openTag = "<b>"; closeTag = "</b>"; }
+      else if (type === 'code') { openTag = "<code>"; closeTag = "</code>"; }
+      else if (type === 'block') { openTag = "<pre>"; closeTag = "</pre>"; }
+    } else {
+      // Basic MarkdownV2 (escaping not included for simplicity of UI buttons)
+      if (type === 'bold') { openTag = "*"; closeTag = "*"; }
+      else if (type === 'code') { openTag = "`"; closeTag = "`"; }
+      else if (type === 'block') { openTag = "```\n"; closeTag = "\n```"; }
+    }
+
+    const newText = text.substring(0, start) + openTag + selectedText + closeTag + text.substring(end);
+    setMessage(newText);
+    
+    setTimeout(() => {
+      textarea.focus();
+      const offset = openTag.length;
+      textarea.setSelectionRange(start + offset, end + offset);
+    }, 0);
+  };
 
   const handleSend = async () => {
     if (!message.trim()) {
@@ -68,7 +101,7 @@ export default function Home() {
       const res = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: message, token }),
+        body: JSON.stringify({ text: message, token, parseMode }),
       });
 
       const data = await res.json();
@@ -184,10 +217,53 @@ export default function Home() {
             transition={{ delay: 0.1 }}
             className="flex-1 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[32px] p-6 md:p-10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] flex flex-col group"
           >
-            <div className="flex justify-between items-center mb-6">
-              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#555] group-hover:text-[#888] transition-colors">
-                Message
-              </span>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#555] group-hover:text-[#888] transition-colors mr-2">
+                  Format
+                </span>
+                <div className="flex p-1 bg-white/5 rounded-xl border border-white/10 gap-1">
+                  <button 
+                    onClick={() => setParseMode("HTML")}
+                    className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${parseMode === "HTML" ? "bg-[#0088cc] text-white shadow-lg" : "text-[#555] hover:text-[#888]"}`}
+                  >
+                    HTML
+                  </button>
+                  <button 
+                    onClick={() => setParseMode("MarkdownV2")}
+                    className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${parseMode === "MarkdownV2" ? "bg-[#0088cc] text-white shadow-lg" : "text-[#555] hover:text-[#888]"}`}
+                  >
+                    MD
+                  </button>
+                </div>
+                
+                <div className="w-px h-6 bg-white/5 mx-2" />
+                
+                <div className="flex gap-1.5">
+                  <button 
+                    onClick={() => insertFormatting('bold')}
+                    title="Bold"
+                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:border-[#0088cc]/50 hover:bg-[#0088cc]/10 text-[#666] hover:text-[#0088cc] transition-all"
+                  >
+                    <Type className="w-3.5 h-3.5" />
+                  </button>
+                  <button 
+                    onClick={() => insertFormatting('code')}
+                    title="Inline Code"
+                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:border-[#0088cc]/50 hover:bg-[#0088cc]/10 text-[#666] hover:text-[#0088cc] transition-all"
+                  >
+                    <Code className="w-3.5 h-3.5" />
+                  </button>
+                  <button 
+                    onClick={() => insertFormatting('block')}
+                    title="Code Block"
+                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:border-[#0088cc]/50 hover:bg-[#0088cc]/10 text-[#666] hover:text-[#0088cc] transition-all"
+                  >
+                    <Terminal className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+              
               <div className="flex items-center gap-4 text-[10px] font-mono text-[#555]">
                 <span>{message.length} <span className="opacity-50">CHARS</span></span>
               </div>

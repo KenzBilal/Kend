@@ -76,9 +76,10 @@ export async function handleSend(req: Request, res: Response) {
 
     // Split message into chunks if necessary
     const chunks = splitMessage(text);
+    const parseMode = (req.body as any).parseMode || "HTML";
 
     // Send all chunks
-    const results = await sendMultipartMessage(botToken, chatId, chunks);
+    const results = await sendMultipartMessage(botToken, chatId, chunks, parseMode);
 
     // Track message IDs for auto-deletion (7 days, though Telegram limits to 48h for bots)
     const cleanupScore = Date.now() + (1000 * 60 * 60 * 24 * 7);
