@@ -1,16 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
-import { Send, CheckCircle, AlertCircle, Loader2, X, Trash2 } from "lucide-react";
+import { Send, CheckCircle, AlertCircle, Loader2, X, Trash2, Copy, ExternalLink, Shield } from "lucide-react";
 import { useParams } from "wouter";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import { CONFIG } from "@shared/config";
 
 /**
- * Minimalist Brutalism Design:
- * - Deep slate background (#1a1a1a) with white text for maximum contrast
- * - Monospace textarea for technical input feel
- * - Telegram blue (#0088cc) accent for send button
- * - No rounded corners, no shadows, no gradients
- * - Keyboard shortcuts: Ctrl+Enter or Cmd+Enter to send
- * - Status indicator with subtle pulse animation
+ * Premium Liquid Dark Design:
+ * - Deep obsidian background with subtle radial gradient
+ * - Glassmorphism containers (white/5, backdrop-blur)
+ * - Telegram Blue (#0088cc) primary accent with glow
+ * - Smooth Framer Motion transitions
+ * - Responsive, tactile feedback
  */
 
 type StatusType = "idle" | "sending" | "success" | "error";
@@ -24,18 +26,17 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize textarea as user types
+  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = Math.min(
         textareaRef.current.scrollHeight,
-        window.innerHeight * 0.7
+        window.innerHeight * 0.6
       ) + "px";
     }
   }, [message]);
 
-  // Keyboard shortcut: Ctrl+Enter or Cmd+Enter to send
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
@@ -43,240 +44,238 @@ export default function Home() {
     }
   };
 
+  const copyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success("Portal link copied to clipboard");
+  };
+
   const handleSend = async () => {
     if (!message.trim()) {
-      setStatus("error");
-      setStatusMessage("Message cannot be empty");
-      setTimeout(() => setStatus("idle"), 3000);
+      toast.error("Message cannot be empty");
       return;
     }
 
     if (!token) {
-      setError("Authentication error: No token provided in URL. Access the portal via the Telegram bot.");
-      setStatus("error");
-      setStatusMessage("Auth error");
+      setError("Session Error: Invalid or missing token. Access via Telegram.");
       return;
     }
 
     setStatus("sending");
-    setStatusMessage("Sending...");
+    setStatusMessage("Broadcasting to Telegram...");
     setError(null);
 
     try {
       const res = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          text: message,
-          token: token // Secure token validation on server
-        }),
+        body: JSON.stringify({ text: message, token }),
       });
 
-      const rawText = await res.text(); // Read as text FIRST
-
-      let data;
-      try {
-        data = JSON.parse(rawText);
-      } catch {
-        // Show raw HTML/text in popup if not JSON
-        setError(`Status ${res.status}: Response was not JSON.\n\n${rawText.slice(0, 500)}`);
-        setStatus("error");
-        setStatusMessage("Response format error");
-        return;
-      }
+      const data = await res.json();
 
       if (!res.ok) {
-        setError(`Status ${res.status}: ${data.error || JSON.stringify(data)}`);
-        setStatus("error");
-        setStatusMessage("Failed to send message");
-        return;
+        throw new Error(data.error || "Failed to relay message");
       }
 
-      // success
       setStatus("success");
-      setStatusMessage(
-        data.messageCount > 1
-          ? `Message sent successfully (${data.messageCount} parts)`
-          : "Message sent successfully"
-      );
+      setStatusMessage("Transmission successful");
       setMessage("");
+      toast.success("Message relayed successfully");
 
-      // Reset status after 3 seconds
       setTimeout(() => {
         setStatus("idle");
         setStatusMessage("");
       }, 3000);
 
-      // Focus textarea for next message
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-      }
+      textareaRef.current?.focus();
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
-      setError(`Network error: ${errorMsg}`);
+      setError(errorMsg);
       setStatus("error");
-      setStatusMessage("Network error");
+      setStatusMessage("Transmission failed");
+      toast.error(errorMsg);
     }
   };
 
-  const terminalId = token ? token.substring(0, 8).toUpperCase() : "UNKNOWN";
+  const terminalId = token ? token.substring(0, 8).toUpperCase() : "NULL";
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col relative">
-      {/* Error Popup */}
-      {error && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl p-4 bg-red-600 text-white rounded-none border-2 border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-[9999] flex flex-col gap-2 animate-in fade-in slide-in-from-top-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-sm">
-              <AlertCircle className="w-4 h-4 text-white" />
-              Security / Execution Error
-            </div>
-            <button
-              onClick={() => setError(null)}
-              className="p-1 hover:bg-red-700 transition-colors"
-              aria-label="Close"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-          <div className="bg-black/20 p-3 border border-red-400/30">
-            <pre className="whitespace-pre-wrap font-mono text-xs overflow-auto max-h-[400px]">
-              {error}
-            </pre>
-          </div>
-          <Button 
-            onClick={() => setError(null)}
-            variant="outline" 
-            className="mt-2 self-end border-white text-white hover:bg-white hover:text-red-600 font-bold uppercase tracking-widest text-[10px] h-8 rounded-none"
+    <div className="min-h-screen bg-[#0a0a0b] text-[#e1e1e3] selection:bg-[#0088cc]/30 overflow-x-hidden font-sans selection:text-white">
+      {/* Background Decor */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#0088cc]/10 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[35%] h-[35%] bg-purple-500/5 blur-[100px] rounded-full" />
+      </div>
+
+      <AnimatePresence>
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-xl z-[100]"
           >
-            DISMISS [X]
-          </Button>
-        </div>
-      )}
-
-      {/* Header */}
-      <header className="border-b border-border py-6 px-4 sm:px-6">
-        <div className="max-w-4xl mx-auto flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Telegram Message Sender
-            </h1>
-            <p className="text-muted-foreground mt-2 text-[10px] uppercase tracking-[0.3em] font-mono">
-              Secure Relay Portal // Session: {terminalId}
-            </p>
-          </div>
-          <div className="hidden sm:block">
-             <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] font-mono uppercase tracking-widest">
-               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-               Channel encrypted
-             </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col p-4 sm:p-6">
-        <div className="max-w-4xl mx-auto w-full flex flex-col flex-1">
-          {/* Textarea Container */}
-          <div className="flex-1 flex flex-col mb-6">
-            <div className="flex justify-between items-end mb-3">
-              <label
-                htmlFor="message"
-                className="text-sm font-bold uppercase tracking-widest"
-              >
-                Output Stream Buffer
-              </label>
-              <span className="text-[10px] font-mono text-muted-foreground uppercase">
-                {message.length} chars
-              </span>
+            <div className="bg-red-500/10 backdrop-blur-xl border border-red-500/20 p-4 rounded-2xl shadow-2xl flex items-start gap-4">
+              <div className="bg-red-500/20 p-2 rounded-xl">
+                <AlertCircle className="w-5 h-5 text-red-500" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-red-500 font-bold text-sm tracking-tight">Access Denied / System Error</h3>
+                <p className="text-red-400/80 text-xs mt-1 font-mono leading-relaxed">{error}</p>
+              </div>
+              <button onClick={() => setError(null)} className="text-red-500/50 hover:text-red-500 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="max-w-5xl mx-auto px-4 py-8 md:py-16 relative z-10 flex flex-col min-h-screen">
+        {/* Header */}
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2.5 bg-[#0088cc] rounded-2xl shadow-[0_0_20px_rgba(0,136,204,0.3)]">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <h1 className="text-4xl font-extrabold tracking-tighter text-white">
+                KEND<span className="text-[#0088cc]">RELAY</span>
+              </h1>
+            </div>
+            <p className="text-[#888] font-mono text-[11px] uppercase tracking-[0.4em]">
+              Secure Terminal Protocol // ID: {terminalId}
+            </p>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex gap-3"
+          >
+            <Button 
+              variant="outline" 
+              onClick={copyLink}
+              className="bg-white/5 border-white/10 hover:bg-white/10 text-xs font-bold uppercase tracking-widest h-10 px-5 rounded-xl transition-all"
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Copy Portal
+            </Button>
+            <div className="flex items-center gap-2 px-4 h-10 bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] font-bold uppercase tracking-widest rounded-xl">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_#22c55e]" />
+              Live Link
+            </div>
+          </motion.div>
+        </header>
+
+        {/* Main Interface */}
+        <main className="flex-1 flex flex-col gap-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="flex-1 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[32px] p-6 md:p-10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] flex flex-col group"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#555] group-hover:text-[#888] transition-colors">
+                Buffered Message Stream
+              </span>
+              <div className="flex items-center gap-4 text-[10px] font-mono text-[#555]">
+                <span>{message.length} <span className="opacity-50">CHARS</span></span>
+                <div className="w-px h-3 bg-white/10" />
+                <span>AES-256 <span className="opacity-50">SYNCED</span></span>
+              </div>
+            </div>
+
             <textarea
               ref={textareaRef}
-              id="message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="ENTER SYSTEM MESSAGE... (CTRL+ENTER TO EXECUTE)"
-              className="flex-1 bg-input text-foreground border-2 border-border p-6 font-mono text-base resize-none focus:outline-none focus:border-primary transition-colors placeholder:opacity-30 selection:bg-primary/20"
-              style={{ minHeight: "300px" }}
+              placeholder="Start typing your secure message..."
+              className="flex-1 w-full bg-transparent text-white font-mono text-lg md:text-xl leading-relaxed resize-none focus:outline-none placeholder:text-[#333] selection:bg-[#0088cc]/40 transition-all custom-scrollbar"
+              style={{ minHeight: "320px" }}
             />
-            <div className="flex gap-4 mt-2 font-mono text-[10px] text-muted-foreground uppercase">
-              <span>Limit: 4000/chunk</span>
-              <span>Encoding: UTF-8</span>
-              <span>Auth: Tokenized</span>
-            </div>
-          </div>
 
-          {/* Button and Status Row */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6">
-            <Button
-              onClick={handleSend}
-              disabled={status === "sending" || !message.trim()}
-              className="bg-primary text-primary-foreground hover:bg-blue-600 disabled:opacity-30 disabled:cursor-not-allowed px-12 py-8 font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 rounded-none border-b-4 border-r-4 border-black active:border-0 active:translate-x-1 active:translate-y-1 transition-all flex-1 sm:flex-initial"
-              size="lg"
-            >
-              {status === "sending" ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Broadcasting...
-                </>
-              ) : (
-                <>
-                  <Send className="w-5 h-5" />
-                  Execute
-                </>
-              )}
-            </Button>
+            <div className="mt-8 pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-6">
+              <div className="flex gap-4 items-center">
+                <Button
+                  onClick={handleSend}
+                  disabled={status === "sending" || !message.trim()}
+                  className="bg-[#0088cc] hover:bg-[#0099ee] text-white disabled:opacity-20 px-10 h-16 rounded-2xl font-black uppercase tracking-widest shadow-[0_12px_24px_-8px_rgba(0,136,204,0.4)] hover:shadow-[0_16px_32px_-8px_rgba(0,136,204,0.5)] hover:-translate-y-0.5 transition-all text-sm group"
+                >
+                  {status === "sending" ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin mr-3" />
+                      Broadcasting
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-3 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                      Execute Relay
+                    </>
+                  )}
+                </Button>
 
-            <Button
-              onClick={() => setMessage("")}
-              disabled={status === "sending" || !message.trim()}
-              variant="outline"
-              className="border-2 border-border hover:bg-neutral-800 px-8 py-8 font-bold uppercase tracking-widest rounded-none transition-all flex items-center justify-center gap-2 flex-1 sm:flex-initial"
-              size="lg"
-            >
-              <Trash2 className="w-5 h-5" />
-              Clear
-            </Button>
-
-            {/* Status Indicator */}
-            {statusMessage && (
-              <div
-                className={`flex items-center gap-3 px-6 py-2 font-mono text-xs font-bold uppercase tracking-widest ${
-                  status === "success"
-                    ? "bg-green-500/10 text-green-400 border border-green-500/20"
-                    : status === "error"
-                      ? "bg-red-500/10 text-red-500 border border-red-500/20"
-                      : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                } ${status === "sending" ? "animate-pulse" : ""}`}
-              >
-                {status === "success" && (
-                  <CheckCircle className="w-4 h-4 flex-shrink-0" />
-                )}
-                {status === "error" && (
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                )}
-                {status === "sending" && (
-                  <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
-                )}
-                <span>{statusMessage}</span>
+                <Button
+                  variant="ghost"
+                  onClick={() => setMessage("")}
+                  disabled={status === "sending" || !message.trim()}
+                  className="h-16 w-16 rounded-2xl border border-white/5 hover:bg-red-500/10 hover:border-red-500/20 text-[#444] hover:text-red-500 transition-all"
+                >
+                  <Trash2 className="w-6 h-6" />
+                </Button>
               </div>
-            )}
-          </div>
-        </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border py-8 px-4 sm:px-6 text-center">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 opacity-40 hover:opacity-100 transition-opacity">
-          <p className="text-[10px] font-mono uppercase tracking-widest">
-            Relay active // {terminalId ? `Linked to ${terminalId}` : "Waiting for auth"}
-          </p>
-          <p className="text-[10px] font-mono uppercase tracking-widest">
-            v2.0 Token-Authenticated
-          </p>
-        </div>
-      </footer>
+              <AnimatePresence mode="wait">
+                {statusMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className={`flex items-center gap-3 px-6 h-12 rounded-xl font-bold text-[10px] uppercase tracking-[0.2em] border z-20 ${
+                      status === "success" 
+                        ? "bg-green-500/5 text-green-400 border-green-500/20 shadow-[0_4px_16px_rgba(34,197,94,0.1)]" 
+                        : status === "error"
+                        ? "bg-red-500/5 text-red-400 border-red-500/20"
+                        : "bg-[#0088cc]/5 text-[#0088cc] border-[#0088cc]/20 shadow-[0_4px_16px_rgba(0,136,204,0.1)]"
+                    }`}
+                  >
+                    {status === "success" && <CheckCircle className="w-4 h-4" />}
+                    {status === "error" && <AlertCircle className="w-4 h-4" />}
+                    {status === "sending" && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {statusMessage}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+
+          <footer className="mt-auto pt-16 pb-8 flex flex-col md:flex-row justify-between items-center gap-4 text-[#444] transition-all">
+            <div className="flex items-center gap-6">
+              <span className="text-[10px] font-mono tracking-widest uppercase opacity-40 hover:opacity-100 cursor-default transition-opacity">
+                V3.1.2 // STABLE
+              </span>
+              <div className="w-1 h-1 bg-[#222] rounded-full" />
+              <span className="text-[10px] font-mono tracking-widest uppercase opacity-40 hover:opacity-100 cursor-default transition-opacity">
+                Latency: 142ms
+              </span>
+            </div>
+            
+            <a 
+              href={`https://t.me/${CONFIG.BOT_USERNAME}`} 
+              target="_blank" 
+              rel="noreferrer"
+              className="text-[10px] font-bold uppercase tracking-widest hover:text-[#0088cc] transition-colors flex items-center gap-2"
+            >
+              Open Support Bot <ExternalLink className="w-3 h-3" />
+            </a>
+          </footer>
+        </main>
+      </div>
     </div>
   );
 }

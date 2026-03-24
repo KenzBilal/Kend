@@ -8,6 +8,7 @@ import { Request, Response } from "express";
 import { sendTelegramMessage } from "../telegram.js";
 import { redis } from "../lib/redis.js";
 import crypto from "crypto";
+import { CONFIG } from "@shared/config";
 
 function generateToken() {
   return crypto.randomBytes(16).toString("hex");
@@ -25,7 +26,7 @@ async function handleStart(botToken: string, chatId: number | string) {
     await redis.set(`user:${chatId}`, token);
   }
 
-  const domain = process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  const domain = CONFIG.APP_URL;
   const link = `${domain}/send/${token}`;
 
   await sendTelegramMessage(

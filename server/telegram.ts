@@ -1,10 +1,7 @@
-/**
- * Telegram Bot Utilities
- * Handles message splitting, API calls, and webhook communication
- */
+import { CONFIG } from "../shared/config.js";
 
-const TELEGRAM_API_BASE = "https://api.telegram.org";
-const MAX_MESSAGE_LENGTH = 4000; // Reduced from 4096 to leave room for [Part X/Y] prefixes
+const TELEGRAM_API_BASE = CONFIG.TELEGRAM_API_BASE;
+export const MAX_MESSAGE_LENGTH = CONFIG.MAX_MESSAGE_LENGTH;
 
 export interface TelegramMessage {
   chat_id: number | string;

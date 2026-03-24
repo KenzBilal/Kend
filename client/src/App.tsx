@@ -6,10 +6,11 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import { CONFIG } from "@shared/config";
 
 
 function Router() {
-  const botUsername = "YourBotUsername"; // This should ideally come from env
+  const botUsername = CONFIG.BOT_USERNAME;
   const botLink = `https://t.me/${botUsername}`;
 
   return (
