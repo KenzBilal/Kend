@@ -17,17 +17,8 @@ function generateToken() {
 async function handleStart(botToken: string, chatId: number | string) {
   // Check if Redis is configured
   if (!CONFIG.REDIS_URL || !CONFIG.REDIS_TOKEN) {
-    console.error("❌ Redis is not configured. Cannot generate token.", {
-      hasUrl: !!CONFIG.REDIS_URL,
-      hasToken: !!CONFIG.REDIS_TOKEN,
-      envUrl: !!process.env.UPSTASH_REDIS_REST_URL,
-      envToken: !!process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
-    const missing = [];
-    if (!CONFIG.REDIS_URL) missing.push("UPSTASH_REDIS_REST_URL");
-    if (!CONFIG.REDIS_TOKEN) missing.push("UPSTASH_REDIS_REST_TOKEN");
-    
-    await sendTelegramMessage(botToken, chatId, `❌ <b>Service Error:</b> Missing configuration: ${missing.join(", ")}. Please verify Vercel environment variables and re-deploy.`);
+    console.error("❌ Redis is not configured. Cannot generate token.");
+    await sendTelegramMessage(botToken, chatId, "❌ <b>Service Error:</b> The system is not fully configured (Redis missing). Please contact the administrator.");
     return;
   }
 
