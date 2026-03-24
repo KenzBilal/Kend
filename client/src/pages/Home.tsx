@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
-import { Send, CheckCircle, AlertCircle, Loader2, X } from "lucide-react";
+import { Send, CheckCircle, AlertCircle, Loader2, X, Trash2 } from "lucide-react";
 
 /**
  * Minimalist Brutalism Design:
@@ -189,7 +189,7 @@ export default function Home() {
             <Button
               onClick={handleSend}
               disabled={status === "sending" || !message.trim()}
-              className="bg-primary text-primary-foreground hover:bg-blue-600 disabled:opacity-30 disabled:cursor-not-allowed px-12 py-6 font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 rounded-none border-b-4 border-r-4 border-black active:border-0 active:translate-x-1 active:translate-y-1 transition-all"
+              className="bg-primary text-primary-foreground hover:bg-blue-600 disabled:opacity-30 disabled:cursor-not-allowed px-12 py-6 font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 rounded-none border-b-4 border-r-4 border-black active:border-0 active:translate-x-1 active:translate-y-1 transition-all flex-1 sm:flex-initial"
               size="lg"
             >
               {status === "sending" ? (
@@ -203,6 +203,17 @@ export default function Home() {
                   Execute
                 </>
               )}
+            </Button>
+
+            <Button
+              onClick={() => setMessage("")}
+              disabled={status === "sending" || !message.trim()}
+              variant="outline"
+              className="border-2 border-border hover:bg-neutral-800 px-8 py-6 font-bold uppercase tracking-widest rounded-none transition-all flex items-center justify-center gap-2 flex-1 sm:flex-initial"
+              size="lg"
+            >
+              <Trash2 className="w-5 h-5" />
+              Clear
             </Button>
 
             {/* Status Indicator */}
