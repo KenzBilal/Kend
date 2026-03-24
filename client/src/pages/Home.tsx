@@ -166,10 +166,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#e1e1e3] selection:bg-[#0088cc]/30 overflow-x-hidden font-sans selection:text-white">
-      {/* Background Decor */}
+      {/* Background Decor - Simplified for performance */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#0088cc]/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[35%] h-[35%] bg-purple-500/5 blur-[100px] rounded-full" />
+        <div className="absolute top-[-5%] right-[-5%] w-[30%] h-[30%] bg-[#0088cc]/5 blur-[60px] rounded-full" />
+        <div className="absolute bottom-[-5%] left-[-5%] w-[25%] h-[25%] bg-purple-500/3 blur-[50px] rounded-full" />
       </div>
 
       <AnimatePresence>
@@ -248,7 +248,7 @@ export default function Home() {
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-3 w-64 bg-[#151517] border border-white/10 rounded-2xl shadow-2xl z-[100] p-2 backdrop-blur-3xl"
+                    className="absolute right-0 mt-3 w-72 max-w-[calc(100vw-2rem)] bg-[#151517] border border-white/10 rounded-2xl shadow-2xl z-[100] p-2 backdrop-blur-3xl"
                   >
                     <div className="px-3 py-2 text-[10px] font-bold text-[#555] uppercase tracking-[0.2em] mb-1">
                       Select Destination
@@ -305,7 +305,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="flex-1 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[32px] p-6 md:p-10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] flex flex-col group"
+            className="flex-1 bg-white/[0.03] backdrop-blur-xl border border-white/5 rounded-[24px] md:rounded-[32px] p-5 md:p-10 shadow-2xl flex flex-col group"
           >
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
               <div className="flex items-center gap-2">
@@ -329,35 +329,35 @@ export default function Home() {
                 
                 <div className="w-px h-6 bg-white/5 mx-2" />
                 
-                <div className="flex gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   <button 
                     onClick={() => insertFormatting('bold')}
                     title="Bold"
-                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:border-[#0088cc]/50 hover:bg-[#0088cc]/10 text-[#666] hover:text-[#0088cc] transition-all"
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:border-[#0088cc]/50 hover:bg-[#0088cc]/10 text-[#666] hover:text-[#0088cc] transition-all active:scale-95"
                   >
-                    <Type className="w-3.5 h-3.5" />
+                    <Type className="w-4 h-4" />
                   </button>
                   <button 
                     onClick={() => insertFormatting('code')}
                     title="Inline Code"
-                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:border-[#0088cc]/50 hover:bg-[#0088cc]/10 text-[#666] hover:text-[#0088cc] transition-all"
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:border-[#0088cc]/50 hover:bg-[#0088cc]/10 text-[#666] hover:text-[#0088cc] transition-all active:scale-95"
                   >
-                    <Code className="w-3.5 h-3.5" />
+                    <Code className="w-4 h-4" />
                   </button>
                   <button 
                     onClick={() => insertFormatting('block')}
                     title="Code Block"
-                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:border-[#0088cc]/50 hover:bg-[#0088cc]/10 text-[#666] hover:text-[#0088cc] transition-all"
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:border-[#0088cc]/50 hover:bg-[#0088cc]/10 text-[#666] hover:text-[#0088cc] transition-all active:scale-95"
                   >
-                    <Terminal className="w-3.5 h-3.5" />
+                    <Terminal className="w-4 h-4" />
                   </button>
                   
                   <button 
                     onClick={() => setCopyClean(!copyClean)}
-                    title="Copy Clean Mode (Wrap in <pre>)"
-                    className={`w-8 h-8 flex items-center justify-center rounded-xl border transition-all ${copyClean ? "bg-[#0088cc]/20 border-[#0088cc] text-[#0088cc] shadow-[0_0_12px_rgba(0,136,204,0.2)]" : "bg-white/5 border-white/5 hover:border-[#0088cc]/50 text-[#666] hover:text-[#0088cc]"}`}
+                    title="Copy Clean Mode"
+                    className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${copyClean ? "bg-[#0088cc]/20 border-[#0088cc] text-[#0088cc] shadow-[0_0_12px_rgba(0,136,204,0.2)]" : "bg-white/5 border-white/5 hover:border-[#0088cc]/50 text-[#666] hover:text-[#0088cc]"}`}
                   >
-                    <Hash className="w-3.5 h-3.5" />
+                    <Hash className="w-4 h-4" />
                   </button>
                 </div>
               </div>
