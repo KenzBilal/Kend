@@ -8,7 +8,7 @@ import { Request, Response } from "express";
 import { sendTelegramMessage } from "../telegram.js";
 import { redis } from "../lib/redis.js";
 import crypto from "crypto";
-import { CONFIG } from "@shared/config";
+import { CONFIG } from "../../shared/config.js";
 
 function generateToken() {
   return crypto.randomBytes(16).toString("hex");
