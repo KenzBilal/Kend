@@ -3,7 +3,7 @@
   "buildCommand": "pnpm build",
   "outputDirectory": "dist/public",
   "redirects": [
-    { "source": "/", "destination": "https://t.me/YourBotUsername", "permanent": false }
+    { "source": "/", "destination": "https://t.me/Any_wherebot", "permanent": false }
   ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },

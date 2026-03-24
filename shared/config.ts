@@ -21,7 +21,7 @@ export const CONFIG = {
   BOT_USERNAME: getEnv("VITE_BOT_USERNAME", "Any_wherebot"),
   
   // App base URL (for generating portal links)
-  APP_URL: getEnv("VITE_APP_URL", "http://localhost:3000"),
+  APP_URL: getEnv("VITE_APP_URL", "https://kend-psi.vercel.app"),
   
   // Telegram API Base
   TELEGRAM_API_BASE: "https://api.telegram.org",
