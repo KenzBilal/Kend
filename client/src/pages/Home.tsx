@@ -497,7 +497,7 @@ export default function Home() {
               </div>
 
               {/* Sidebar Content */}
-              <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto px-8 py-6 space-y-8 custom-scrollbar">
                  <div className="space-y-2">
                     <p className="text-[10px] font-black text-[#333] uppercase tracking-[0.2em] mb-4">Account</p>
                     <div className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center gap-4 group hover:bg-white/[0.04] transition-colors cursor-pointer">
@@ -509,6 +509,27 @@ export default function Home() {
                         <div className="text-[10px] text-[#555] font-bold uppercase tracking-widest">Current Session</div>
                       </div>
                     </div>
+                 </div>
+
+                 <div className="space-y-2">
+                    <p className="text-[10px] font-black text-[#333] uppercase tracking-[0.2em] mb-4">Sharing</p>
+                    <a 
+                      href={window.location.origin}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between group hover:bg-[#0088cc]/10 hover:border-[#0088cc]/30 transition-all active:scale-[0.98] no-underline"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-[#0088cc]/10 flex items-center justify-center text-[#0088cc] group-hover:scale-110 transition-transform">
+                          <Send className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-white group-hover:text-[#0088cc] transition-colors">Invite Friend</div>
+                          <div className="text-[10px] text-[#555] font-bold uppercase tracking-widest">Share Kend It portal</div>
+                        </div>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-[#333] group-hover:text-[#0088cc] transition-colors" />
+                    </a>
                  </div>
 
                  <div className="space-y-2">
