@@ -28,7 +28,7 @@ async function handleStart(botToken: string, chatId: number | string) {
 
     if (!token) {
       token = generateToken();
-      const EXPIRY_SECONDS = 60 * 60 * 24 * 30; // 30 days
+      const EXPIRY_SECONDS = 60 * 60 * 24 * 30 * 6; // 6 months
       // store mapping
       await redis.set(`token:${token}`, chatId.toString(), { ex: EXPIRY_SECONDS });
       // reverse mapping

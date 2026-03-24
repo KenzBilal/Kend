@@ -78,7 +78,18 @@ export async function handleSend(req: Request, res: Response) {
     const chunks = splitMessage(text);
 
     // Send all chunks
-    await sendMultipartMessage(botToken, chatId, chunks);
+    const results = await sendMultipartMessage(botToken, chatId, chunks);
+
+    // Track message IDs for auto-deletion (7 days, though Telegram limits to 48h for bots)
+    const cleanupScore = Date.now() + (1000 * 60 * 60 * 24 * 7);
+    for (const result of results) {
+      if (result.ok && result.result) {
+        await redis.zadd("cleanup:messages", {
+          score: cleanupScore,
+          member: `${chatId}:${result.result.message_id}`,
+        });
+      }
+    }
 
     // Return success response
     return res.status(200).json({
