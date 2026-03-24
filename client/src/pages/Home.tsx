@@ -199,113 +199,116 @@ export default function Home() {
 
       <div className="max-w-5xl mx-auto px-4 py-8 md:py-16 relative z-10 flex flex-col min-h-screen">
         {/* Header */}
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-          >
-            <div className="flex items-center gap-3 mb-2">
+        <header className="flex flex-col gap-6 mb-8 md:mb-12">
+          <div className="flex items-center justify-between w-full">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center gap-3"
+            >
               <div className="p-2.5 bg-[#0088cc] rounded-2xl shadow-[0_0_20px_rgba(0,136,204,0.3)] flex items-center justify-center relative w-11 h-11">
-                <span className="text-white font-black text-2xl tracking-tighter relative z-10 transition-transform hover:scale-110">K</span>
+                <span className="text-white font-black text-2xl tracking-tighter relative z-10">K</span>
                 <div className="absolute right-1 bottom-1 opacity-100 z-20">
-                   <div className="bg-white rounded-full p-0.5 shadow-md transform -rotate-12 hover:rotate-0 transition-transform">
+                   <div className="bg-white rounded-full p-0.5 shadow-md">
                       <Send className="w-3 h-3 text-[#0088cc]" />
                    </div>
                 </div>
               </div>
-              <h1 className="text-4xl font-extrabold tracking-tighter text-white">
-                KEND<span className="text-[#0088cc]"> IT</span>
-              </h1>
+              <div>
+                <h1 className="text-2xl md:text-4xl font-extrabold tracking-tighter text-white">
+                  KEND<span className="text-[#0088cc]"> IT</span>
+                </h1>
+                <p className="md:hidden text-[#444] font-mono text-[9px] uppercase tracking-[0.3em] -mt-1">
+                  ID: {terminalId}
+                </p>
+              </div>
+            </motion.div>
+
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setShowSidebar(true)}
+                className="w-11 h-11 flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-white transition-all active:scale-90"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
             </div>
-            <p className="text-[#888] font-mono text-[11px] uppercase tracking-[0.4em]">
-              ID: {terminalId}
-            </p>
-          </motion.div>
+          </div>
 
           <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex gap-3 relative"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4"
           >
-            <div className="hidden sm:flex items-center gap-2 px-4 h-10 bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] font-bold uppercase tracking-widest rounded-xl">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_#22c55e]" />
-              Live Link
+            <div className="hidden md:block">
+              <p className="text-[#888] font-mono text-[11px] uppercase tracking-[0.4em]">
+                ID: {terminalId}
+              </p>
             </div>
-            
-            <div className="relative">
+
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="flex-1 sm:flex-none relative">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowDestinations(!showDestinations)}
+                  className={`w-full sm:w-auto border-white/10 hover:bg-white/10 text-xs font-bold uppercase tracking-widest h-12 md:h-10 px-6 rounded-2xl md:rounded-xl transition-all ${showDestinations ? "bg-white/10" : "bg-white/5"}`}
+                >
+                  <Hash className="w-4 h-4 mr-3" />
+                  <span>Dests</span>
+                  <ChevronDown className={`w-3 h-3 ml-auto sm:ml-3 transition-transform ${showDestinations ? "rotate-180" : ""}`} />
+                </Button>
+                
+                <AnimatePresence>
+                  {showDestinations && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute left-0 sm:left-auto sm:right-0 mt-3 w-full sm:w-72 bg-[#121214] border border-white/10 rounded-2xl shadow-2xl z-[100] p-2 backdrop-blur-3xl"
+                    >
+                      <div className="px-3 py-3 text-[10px] font-black text-[#555] uppercase tracking-[0.2em] mb-1">
+                        Select Target
+                      </div>
+                      <div className="max-h-[40vh] overflow-y-auto custom-scrollbar space-y-1">
+                        {chats.map((chat) => (
+                          <button
+                            key={chat.id}
+                            onClick={() => {
+                              setSelectedChatId(chat.id);
+                              setShowDestinations(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-4 md:py-3 rounded-xl transition-all ${
+                              selectedChatId === chat.id 
+                                ? "bg-[#0088cc] text-white" 
+                                : "hover:bg-white/5 text-[#888] hover:text-white"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${selectedChatId === chat.id ? "bg-white/20" : "bg-white/5"}`}>
+                                {chat.type === 'private' ? <Monitor className="w-4 h-4" /> : 
+                                 chat.type === 'channel' ? <Hash className="w-4 h-4" /> : 
+                                 <Users className="w-4 h-4" />}
+                              </div>
+                              <span className="text-xs font-bold truncate">{chat.name}</span>
+                            </div>
+                            {selectedChatId === chat.id && <CheckCircle className="w-3 h-3" />}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              
               <Button 
                 variant="outline" 
-                onClick={() => setShowDestinations(!showDestinations)}
-                className={`border-white/10 hover:bg-white/10 text-xs font-bold uppercase tracking-widest h-10 px-4 rounded-xl transition-all ${showDestinations ? "bg-white/10" : "bg-white/5"}`}
+                onClick={copyLink}
+                className="bg-white/5 border-white/10 hover:bg-white/10 text-xs font-bold uppercase tracking-widest h-12 md:h-10 px-5 rounded-2xl md:rounded-xl transition-all grow md:grow-0"
               >
-                <Hash className="w-4 h-4 mr-2" />
-                Dests
-                <ChevronDown className={`w-3 h-3 ml-2 transition-transform ${showDestinations ? "rotate-180" : ""}`} />
+                <Copy className="w-4 h-4 mr-2" />
+                <span className="md:hidden">Share</span>
+                <span className="hidden md:inline">Copy Portal</span>
               </Button>
-              
-              <AnimatePresence>
-                {showDestinations && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-3 w-72 max-w-[calc(100vw-2rem)] bg-[#121214] border border-white/10 rounded-2xl shadow-2xl z-[100] p-2 backdrop-blur-3xl"
-                  >
-                    <div className="px-3 py-3 text-[10px] font-black text-[#555] uppercase tracking-[0.2em] mb-1">
-                      Target Destination
-                    </div>
-                    <div className="space-y-1">
-                      {chats.map((chat) => (
-                        <button
-                          key={chat.id}
-                          onClick={() => {
-                            setSelectedChatId(chat.id);
-                            setShowDestinations(false);
-                            toast.success(`Broadcasting to ${chat.name}`);
-                          }}
-                          className={`w-full flex items-center justify-between px-3 py-3 rounded-xl transition-all group active:scale-[0.98] ${
-                            selectedChatId === chat.id 
-                              ? "bg-[#0088cc] text-white" 
-                              : "hover:bg-white/5 text-[#888] hover:text-white"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3 overflow-hidden">
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${selectedChatId === chat.id ? "bg-white/20" : "bg-white/5"}`}>
-                              {chat.type === 'private' ? <Monitor className="w-3.5 h-3.5 shrink-0" /> : 
-                               chat.type === 'channel' ? <Hash className="w-3.5 h-3.5 shrink-0" /> : 
-                               <Users className="w-3.5 h-3.5 shrink-0" />}
-                            </div>
-                            <span className="text-xs font-bold truncate tracking-tight">{chat.name}</span>
-                          </div>
-                          {selectedChatId === chat.id && <CheckCircle className="w-3 h-3" />}
-                        </button>
-                      ))}
-                    </div>
-                    {chats.length === 0 && (
-                      <div className="px-3 py-6 text-center text-[#444] text-[10px] font-bold">
-                        No targets found. Use /register in Telegram.
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
-            
-            <Button 
-              variant="outline" 
-              onClick={copyLink}
-              className="bg-white/5 border-white/10 hover:bg-white/10 text-xs font-bold uppercase tracking-widest h-10 px-5 rounded-xl transition-all hidden md:flex"
-            >
-              <Copy className="w-4 h-4 mr-2" />
-              Copy
-            </Button>
-
-            <button 
-              onClick={() => setShowSidebar(true)}
-              className={`w-10 h-10 flex items-center justify-center rounded-xl border border-white/10 transition-all hover:bg-white/10 ${showSidebar ? "bg-white/10" : "bg-white/5 text-[#888] hover:text-white"}`}
-            >
-              <Menu className="w-5 h-5" />
-            </button>
           </motion.div>
         </header>
 
@@ -317,63 +320,51 @@ export default function Home() {
             transition={{ delay: 0.1 }}
             className="flex-1 bg-white/[0.03] backdrop-blur-xl border border-white/5 rounded-[24px] md:rounded-[32px] p-5 md:p-10 shadow-2xl flex flex-col group"
           >
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#555] group-hover:text-[#888] transition-colors mr-2">
-                  Format
-                </span>
-                <div className="flex p-1 bg-white/5 rounded-xl border border-white/10 gap-1">
-                  <button 
-                    onClick={() => setParseMode("HTML")}
-                    className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${parseMode === "HTML" ? "bg-[#0088cc] text-white shadow-lg" : "text-[#555] hover:text-[#888]"}`}
-                  >
-                    HTML
-                  </button>
-                  <button 
-                    onClick={() => setParseMode("MarkdownV2")}
-                    className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${parseMode === "MarkdownV2" ? "bg-[#0088cc] text-white shadow-lg" : "text-[#555] hover:text-[#888]"}`}
-                  >
-                    MD
-                  </button>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-6">
+              <div className="w-full sm:w-auto">
+                <div className="flex items-center gap-2 mb-4 sm:mb-0">
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#333] mr-2">Mode</span>
+                  <div className="flex p-0.5 bg-black/20 rounded-xl border border-white/5 gap-0.5">
+                    {['HTML', 'MarkdownV2'].map((mode) => (
+                      <button 
+                        key={mode}
+                        onClick={() => setParseMode(mode as any)}
+                        className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${parseMode === mode ? "bg-[#0088cc] text-white" : "text-[#555] hover:text-[#888]"}`}
+                      >
+                        {mode === 'MarkdownV2' ? 'MD' : mode}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 
-                <div className="w-px h-6 bg-white/5 mx-2" />
-                
-                <div className="flex flex-wrap gap-2">
-                  <button 
-                    onClick={() => insertFormatting('bold')}
-                    title="Bold"
-                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:border-[#0088cc]/50 hover:bg-[#0088cc]/10 text-[#666] hover:text-[#0088cc] transition-all active:scale-95"
-                  >
-                    <Type className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => insertFormatting('code')}
-                    title="Inline Code"
-                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:border-[#0088cc]/50 hover:bg-[#0088cc]/10 text-[#666] hover:text-[#0088cc] transition-all active:scale-95"
-                  >
-                    <Code className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => insertFormatting('block')}
-                    title="Code Block"
-                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:border-[#0088cc]/50 hover:bg-[#0088cc]/10 text-[#666] hover:text-[#0088cc] transition-all active:scale-95"
-                  >
-                    <Terminal className="w-4 h-4" />
-                  </button>
+                <div className="flex flex-wrap gap-2.5 mt-4 sm:mt-6">
+                  {[
+                    { type: 'bold', icon: <Type className="w-4 h-4" /> },
+                    { type: 'code', icon: <Code className="w-4 h-4" /> },
+                    { type: 'block', icon: <Terminal className="w-4 h-4" /> },
+                  ].map((btn) => (
+                    <button 
+                      key={btn.type}
+                      onClick={() => insertFormatting(btn.type as any)}
+                      className="w-12 h-12 md:w-10 md:h-10 flex items-center justify-center rounded-2xl md:rounded-xl bg-white/5 border border-white/5 hover:border-[#0088cc]/50 hover:bg-[#0088cc]/10 text-[#666] hover:text-[#0088cc] transition-all active:scale-90"
+                    >
+                      {btn.icon}
+                    </button>
+                  ))}
+                  
+                  <div className="w-px h-8 bg-white/5 mx-1 my-auto hidden sm:block" />
                   
                   <button 
                     onClick={() => setCopyClean(!copyClean)}
-                    title="Copy Clean Mode"
-                    className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${copyClean ? "bg-[#0088cc]/20 border-[#0088cc] text-[#0088cc] shadow-[0_0_12px_rgba(0,136,204,0.2)]" : "bg-white/5 border-white/5 hover:border-[#0088cc]/50 text-[#666] hover:text-[#0088cc]"}`}
+                    className={`w-12 h-12 md:w-10 md:h-10 flex items-center justify-center rounded-2xl md:rounded-xl border transition-all active:scale-90 ${copyClean ? "bg-[#0088cc]/20 border-[#0088cc] text-[#0088cc]" : "bg-white/5 border-white/5 text-[#666]"}`}
                   >
                     <Hash className="w-4 h-4" />
                   </button>
                 </div>
               </div>
               
-              <div className="flex items-center gap-4 text-[10px] font-mono text-[#555]">
-                <span>{message.length} <span className="opacity-50">CHARS</span></span>
+              <div className="hidden sm:block text-[10px] font-mono text-[#444] font-bold">
+                CHAR COUNT: {message.length}
               </div>
             </div>
 
@@ -387,21 +378,18 @@ export default function Home() {
               style={{ minHeight: "320px" }}
             />
 
-            <div className="mt-8 pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-6">
-              <div className="flex gap-4 items-center">
+            <div className="mt-8 pt-8 border-t border-white/5 flex flex-col items-stretch gap-6">
+              <div className="flex gap-3 w-full">
                 <Button
                   onClick={handleSend}
                   disabled={status === "sending" || !message.trim()}
-                  className="bg-[#0088cc] hover:bg-[#0099ee] text-white disabled:opacity-20 px-10 h-16 rounded-2xl font-black uppercase tracking-widest shadow-[0_12px_24px_-8px_rgba(0,136,204,0.4)] hover:shadow-[0_16px_32px_-8px_rgba(0,136,204,0.5)] hover:-translate-y-0.5 transition-all text-sm group"
+                  className="flex-1 bg-[#0088cc] hover:bg-[#0099ee] text-white disabled:opacity-20 h-16 rounded-2xl font-black uppercase tracking-widest shadow-lg transition-all text-sm grow"
                 >
                   {status === "sending" ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin mr-3" />
-                      Broadcasting
-                    </>
+                    <Loader2 className="w-6 h-6 animate-spin" />
                   ) : (
                     <>
-                      <Send className="w-4 h-4 mr-3 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                      <Send className="w-4 h-4 mr-3" />
                       Execute Relay
                     </>
                   )}
@@ -411,7 +399,7 @@ export default function Home() {
                   variant="ghost"
                   onClick={() => setMessage("")}
                   disabled={status === "sending" || !message.trim()}
-                  className="h-16 w-16 rounded-2xl border border-white/5 hover:bg-red-500/10 hover:border-red-500/20 text-[#444] hover:text-red-500 transition-all"
+                  className="h-16 w-16 rounded-2xl border border-white/5 hover:bg-red-500/10 text-[#222] hover:text-red-500 transition-all shrink-0"
                 >
                   <Trash2 className="w-6 h-6" />
                 </Button>
