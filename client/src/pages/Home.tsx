@@ -25,6 +25,7 @@ export default function Home() {
   const [statusMessage, setStatusMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [parseMode, setParseMode] = useState<"HTML" | "MarkdownV2">("HTML");
+  const [copyClean, setCopyClean] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize textarea
@@ -97,11 +98,14 @@ export default function Home() {
     setStatusMessage("Broadcasting to Telegram...");
     setError(null);
 
+    const finalMessage = copyClean ? `<pre>${message}</pre>` : message;
+    const finalParseMode = copyClean ? "HTML" : parseMode;
+
     try {
       const res = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: message, token, parseMode }),
+        body: JSON.stringify({ text: finalMessage, token, parseMode: finalParseMode }),
       });
 
       const data = await res.json();
@@ -260,6 +264,14 @@ export default function Home() {
                     className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:border-[#0088cc]/50 hover:bg-[#0088cc]/10 text-[#666] hover:text-[#0088cc] transition-all"
                   >
                     <Terminal className="w-3.5 h-3.5" />
+                  </button>
+                  
+                  <button 
+                    onClick={() => setCopyClean(!copyClean)}
+                    title="Copy Clean Mode (Wrap in <pre>)"
+                    className={`w-8 h-8 flex items-center justify-center rounded-xl border transition-all ${copyClean ? "bg-[#0088cc]/20 border-[#0088cc] text-[#0088cc] shadow-[0_0_12px_rgba(0,136,204,0.2)]" : "bg-white/5 border-white/5 hover:border-[#0088cc]/50 text-[#666] hover:text-[#0088cc]"}`}
+                  >
+                    <Hash className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
