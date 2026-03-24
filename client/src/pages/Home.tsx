@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
-import { Send, CheckCircle, AlertCircle, Loader2, X, Trash2, Copy, ExternalLink, Shield, Type, Code, Terminal, Hash, Menu, ChevronDown, Users, MessageSquare, Monitor } from "lucide-react";
+import { Send, CheckCircle, AlertCircle, Loader2, X, Trash2, Copy, ExternalLink, Shield, Type, Code, Terminal, Hash, Menu, ChevronDown, Users, MessageSquare, Monitor, HelpCircle } from "lucide-react";
 import { useParams } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -30,6 +30,7 @@ export default function Home() {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [showDestinations, setShowDestinations] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [showLegend, setShowLegend] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize textarea
@@ -321,9 +322,17 @@ export default function Home() {
             className="flex-1 bg-white/[0.03] backdrop-blur-xl border border-white/5 rounded-[24px] md:rounded-[32px] p-5 md:p-10 shadow-2xl flex flex-col group"
           >
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-6">
-              <div className="w-full sm:w-auto">
-                <div className="flex items-center gap-2 mb-4 sm:mb-0">
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#333] mr-2">Mode</span>
+              <div className="w-full sm:w-auto relative">
+                <div className="flex items-center justify-between sm:justify-start gap-2 mb-4 sm:mb-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#333] mr-2">Control Panel</span>
+                    <button 
+                      onClick={() => setShowLegend(true)}
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 hover:bg-[#0088cc]/10 hover:border-[#0088cc]/30 text-[#333] hover:text-[#0088cc] transition-all active:scale-90"
+                    >
+                      <HelpCircle className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                   <div className="flex p-0.5 bg-black/20 rounded-xl border border-white/5 gap-0.5">
                     {['HTML', 'MarkdownV2'].map((mode) => (
                       <button 
@@ -555,6 +564,67 @@ export default function Home() {
                   <span>v2.4.0</span>
                 </div>
               </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showLegend && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLegend(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-md z-[120]"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm bg-[#0c0c0e] border border-white/10 p-8 rounded-[32px] z-[121] shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-[#0088cc]/10 rounded-2xl flex items-center justify-center border border-[#0088cc]/20">
+                    <HelpCircle className="w-5 h-5 text-[#0088cc]" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white tracking-tight">Manual</h3>
+                </div>
+                <button 
+                  onClick={() => setShowLegend(false)}
+                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 text-[#555] hover:text-white transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {[
+                  { icon: <Type className="w-4 h-4" />, label: "Bold", desc: "Wrap selection in bold tags" },
+                  { icon: <Code className="w-4 h-4" />, label: "Inline", desc: "Monospace for small snippets" },
+                  { icon: <Terminal className="w-4 h-4" />, label: "Block", desc: "Multi-line code formatting" },
+                  { icon: <Hash className="w-4 h-4" />, label: "Clean", desc: "Wrap total msg for 1-tap copy" },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-5 group">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-[#555] group-hover:text-[#0088cc] group-hover:border-[#0088cc]/30 transition-all">
+                      {item.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs font-bold text-white mb-0.5">{item.label}</div>
+                      <div className="text-[10px] text-[#444] font-bold uppercase tracking-widest">{item.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button 
+                onClick={() => setShowLegend(false)}
+                className="w-full mt-10 py-4 bg-[#0088cc] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-lg hover:shadow-[#0088cc]/40 transition-all active:scale-95"
+              >
+                Understood
+              </button>
             </motion.div>
           </>
         )}
