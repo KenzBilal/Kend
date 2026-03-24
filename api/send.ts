@@ -1,2 +1,2 @@
-import { handleSend } from "../server/routes/send";
+import { handleSend } from "../server/routes/send.js";
 export default handleSend;
