@@ -4,7 +4,7 @@
  */
 
 const TELEGRAM_API_BASE = "https://api.telegram.org";
-const MAX_MESSAGE_LENGTH = 4096; // Telegram's character limit per message
+const MAX_MESSAGE_LENGTH = 4000; // Reduced from 4096 to leave room for [Part X/Y] prefixes
 
 export interface TelegramMessage {
   chat_id: number | string;
