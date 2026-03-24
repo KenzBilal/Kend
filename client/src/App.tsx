@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
@@ -8,11 +9,26 @@ import Home from "./pages/Home";
 
 
 function Router() {
+  const botUsername = "YourBotUsername"; // This should ideally come from env
+  const botLink = `https://t.me/${botUsername}`;
+
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
+      <Route path="/">
+        {() => {
+          // Redirect root to Telegram Bot
+          useEffect(() => {
+            window.location.href = botLink;
+          }, []);
+          return (
+            <div className="flex items-center justify-center min-h-screen font-mono text-sm uppercase opacity-50">
+              Redirecting to Telegram Bot...
+            </div>
+          );
+        }}
+      </Route>
+      <Route path="/send/:token" component={Home} />
+      <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
   );

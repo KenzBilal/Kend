@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
 import { Send, CheckCircle, AlertCircle, Loader2, X, Trash2 } from "lucide-react";
+import { useParams } from "wouter";
 
 /**
  * Minimalist Brutalism Design:
@@ -15,6 +16,8 @@ import { Send, CheckCircle, AlertCircle, Loader2, X, Trash2 } from "lucide-react
 type StatusType = "idle" | "sending" | "success" | "error";
 
 export default function Home() {
+  const params = useParams();
+  const token = params.token;
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<StatusType>("idle");
   const [statusMessage, setStatusMessage] = useState("");
@@ -48,6 +51,13 @@ export default function Home() {
       return;
     }
 
+    if (!token) {
+      setError("Authentication error: No token provided in URL. Access the portal via the Telegram bot.");
+      setStatus("error");
+      setStatusMessage("Auth error");
+      return;
+    }
+
     setStatus("sending");
     setStatusMessage("Sending...");
     setError(null);
@@ -56,7 +66,10 @@ export default function Home() {
       const res = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: message }),
+        body: JSON.stringify({ 
+          text: message,
+          token: token // Secure token validation on server
+        }),
       });
 
       const rawText = await res.text(); // Read as text FIRST
@@ -106,6 +119,8 @@ export default function Home() {
     }
   };
 
+  const terminalId = token ? token.substring(0, 8).toUpperCase() : "UNKNOWN";
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col relative">
       {/* Error Popup */}
@@ -114,7 +129,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-sm">
               <AlertCircle className="w-4 h-4 text-white" />
-              Error Details
+              Security / Execution Error
             </div>
             <button
               onClick={() => setError(null)}
@@ -141,13 +156,21 @@ export default function Home() {
 
       {/* Header */}
       <header className="border-b border-border py-6 px-4 sm:px-6">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Telegram Message Sender
-          </h1>
-          <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest font-mono">
-            Direct Terminal Interface v1.0
-          </p>
+        <div className="max-w-4xl mx-auto flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Telegram Message Sender
+            </h1>
+            <p className="text-muted-foreground mt-2 text-[10px] uppercase tracking-[0.3em] font-mono">
+              Secure Relay Portal // Session: {terminalId}
+            </p>
+          </div>
+          <div className="hidden sm:block">
+             <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] font-mono uppercase tracking-widest">
+               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+               Channel encrypted
+             </div>
+          </div>
         </div>
       </header>
 
@@ -161,7 +184,7 @@ export default function Home() {
                 htmlFor="message"
                 className="text-sm font-bold uppercase tracking-widest"
               >
-                Input Buffer
+                Output Stream Buffer
               </label>
               <span className="text-[10px] font-mono text-muted-foreground uppercase">
                 {message.length} chars
@@ -174,13 +197,13 @@ export default function Home() {
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="ENTER SYSTEM MESSAGE... (CTRL+ENTER TO EXECUTE)"
-              className="flex-1 bg-input text-foreground border-2 border-border p-6 font-mono text-base resize-none focus:outline-none focus:border-primary transition-colors placeholder:opacity-30"
+              className="flex-1 bg-input text-foreground border-2 border-border p-6 font-mono text-base resize-none focus:outline-none focus:border-primary transition-colors placeholder:opacity-30 selection:bg-primary/20"
               style={{ minHeight: "300px" }}
             />
             <div className="flex gap-4 mt-2 font-mono text-[10px] text-muted-foreground uppercase">
-              <span>Limit: 4096/chunk</span>
+              <span>Limit: 4000/chunk</span>
               <span>Encoding: UTF-8</span>
-              <span>Status: {status.toUpperCase()}</span>
+              <span>Auth: Tokenized</span>
             </div>
           </div>
 
@@ -189,13 +212,13 @@ export default function Home() {
             <Button
               onClick={handleSend}
               disabled={status === "sending" || !message.trim()}
-              className="bg-primary text-primary-foreground hover:bg-blue-600 disabled:opacity-30 disabled:cursor-not-allowed px-12 py-6 font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 rounded-none border-b-4 border-r-4 border-black active:border-0 active:translate-x-1 active:translate-y-1 transition-all flex-1 sm:flex-initial"
+              className="bg-primary text-primary-foreground hover:bg-blue-600 disabled:opacity-30 disabled:cursor-not-allowed px-12 py-8 font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 rounded-none border-b-4 border-r-4 border-black active:border-0 active:translate-x-1 active:translate-y-1 transition-all flex-1 sm:flex-initial"
               size="lg"
             >
               {status === "sending" ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Busy...
+                  Broadcasting...
                 </>
               ) : (
                 <>
@@ -209,7 +232,7 @@ export default function Home() {
               onClick={() => setMessage("")}
               disabled={status === "sending" || !message.trim()}
               variant="outline"
-              className="border-2 border-border hover:bg-neutral-800 px-8 py-6 font-bold uppercase tracking-widest rounded-none transition-all flex items-center justify-center gap-2 flex-1 sm:flex-initial"
+              className="border-2 border-border hover:bg-neutral-800 px-8 py-8 font-bold uppercase tracking-widest rounded-none transition-all flex items-center justify-center gap-2 flex-1 sm:flex-initial"
               size="lg"
             >
               <Trash2 className="w-5 h-5" />
@@ -247,10 +270,10 @@ export default function Home() {
       <footer className="border-t border-border py-8 px-4 sm:px-6 text-center">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 opacity-40 hover:opacity-100 transition-opacity">
           <p className="text-[10px] font-mono uppercase tracking-widest">
-            Transmission protocols active // No logs retained
+            Relay active // {terminalId ? `Linked to ${terminalId}` : "Waiting for auth"}
           </p>
           <p className="text-[10px] font-mono uppercase tracking-widest">
-            System Ready
+            v2.0 Token-Authenticated
           </p>
         </div>
       </footer>

@@ -1,11 +1,47 @@
 /**
  * POST /api/webhook
  * Telegram webhook endpoint for receiving bot updates
- * Handles callback queries (e.g., copy button clicks)
+ * Handles callback queries and /start command
  */
 
 import { Request, Response } from "express";
 import { sendTelegramMessage } from "../telegram.js";
+import { redis } from "../lib/redis.js";
+import crypto from "crypto";
+
+function generateToken() {
+  return crypto.randomBytes(16).toString("hex");
+}
+
+async function handleStart(botToken: string, chatId: number | string) {
+  // Check if user already has a token
+  let token = (await redis.get(`user:${chatId}`)) as string | null;
+
+  if (!token) {
+    token = generateToken();
+    // store mapping
+    await redis.set(`token:${token}`, chatId.toString());
+    // reverse mapping
+    await redis.set(`user:${chatId}`, token);
+  }
+
+  const domain = process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  const link = `${domain}/send/${token}`;
+
+  await sendTelegramMessage(
+    botToken,
+    chatId,
+    `🚀 <b>Your Private Message Portal is Ready!</b>\n\n` +
+    `Use this unique link to send messages from any device:\n\n` +
+    `<code>${link}</code>\n\n` +
+    `<b>Security Note:</b> Never share this link. It allows anyone to send messages to this chat.`,
+    {
+      inline_keyboard: [
+        [{ text: "🌐 Open Portal", url: link }]
+      ],
+    }
+  );
+}
 
 export interface TelegramUpdate {
   update_id: number;
@@ -92,12 +128,17 @@ export async function handleWebhook(req: Request, res: Response) {
       return res.status(200).json({ ok: true });
     }
 
-    // Handle regular messages (optional - for logging or future features)
+    // Handle regular messages
     if (update.message) {
       const message = update.message;
-      console.log(
-        `Received message from user ${message.from.id}: ${message.text}`
-      );
+      const text = message.text || "";
+      const chatId = message.chat.id;
+
+      if (text.startsWith("/start")) {
+        await handleStart(botToken, chatId);
+      } else {
+        console.log(`Received message from user ${message.from.id}: ${text}`);
+      }
     }
 
     // Always return 200 OK to acknowledge receipt

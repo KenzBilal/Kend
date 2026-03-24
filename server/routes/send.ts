@@ -6,6 +6,7 @@
 
 import { Request, Response } from "express";
 import { splitMessage, sendMultipartMessage } from "../telegram.js";
+import { redis } from "../lib/redis.js";
 
 export async function handleSend(req: Request, res: Response) {
   // Validate request method
@@ -13,12 +14,11 @@ export async function handleSend(req: Request, res: Response) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // Get environment variables
+  // Get bot token from env
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
 
-  if (!botToken || !chatId) {
-    console.error("Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID");
+  if (!botToken) {
+    console.error("Missing TELEGRAM_BOT_TOKEN");
     return res.status(500).json({
       error: "Server configuration error. Please contact the administrator.",
     });
@@ -26,6 +26,7 @@ export async function handleSend(req: Request, res: Response) {
 
   // Parse request body
   let text: string;
+  let token: string;
 
   try {
     const body = req.body;
@@ -33,8 +34,14 @@ export async function handleSend(req: Request, res: Response) {
     if (typeof body === "string") {
       const parsed = JSON.parse(body);
       text = parsed.text;
+      token = parsed.token;
     } else {
       text = body.text;
+      token = body.token;
+    }
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: Access token is required" });
     }
 
     if (!text || typeof text !== "string") {
@@ -57,6 +64,16 @@ export async function handleSend(req: Request, res: Response) {
   }
 
   try {
+    // Validate token and get mapped chatId from Redis
+    const chatId = await redis.get(`token:${token}`) as string | null;
+
+    if (!chatId) {
+      console.warn(`Unauthorized access attempt with token: ${token.substring(0, 8)}...`);
+      return res.status(401).json({ 
+        error: "Unauthorized: Invalid or expired token. Please start the bot again to get a new link." 
+      });
+    }
+
     // Split message into chunks if necessary
     const chunks = splitMessage(text);
 
@@ -71,14 +88,14 @@ export async function handleSend(req: Request, res: Response) {
       characterCount: text.length,
     });
   } catch (error) {
-    console.error("Error sending message:", error);
+    console.error("Error in handleSend:", error);
 
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error occurred";
 
     // Return error response
     return res.status(500).json({
-      error: `Failed to send message: ${errorMessage}`,
+      error: `Execution error: ${errorMessage}`,
     });
   }
 }
