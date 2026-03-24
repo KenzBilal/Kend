@@ -28,6 +28,7 @@ export default function Home() {
   const [copyClean, setCopyClean] = useState(false);
   const [chats, setChats] = useState<any[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [showDestinations, setShowDestinations] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -234,12 +235,60 @@ export default function Home() {
             <div className="relative">
               <Button 
                 variant="outline" 
-                onClick={() => setShowSidebar(true)}
-                className={`border-white/10 hover:bg-white/10 text-xs font-bold uppercase tracking-widest h-10 px-4 rounded-xl transition-all ${showSidebar ? "bg-white/10" : "bg-white/5"}`}
+                onClick={() => setShowDestinations(!showDestinations)}
+                className={`border-white/10 hover:bg-white/10 text-xs font-bold uppercase tracking-widest h-10 px-4 rounded-xl transition-all ${showDestinations ? "bg-white/10" : "bg-white/5"}`}
               >
-                <Menu className="w-4 h-4 mr-2" />
+                <Hash className="w-4 h-4 mr-2" />
                 Dests
+                <ChevronDown className={`w-3 h-3 ml-2 transition-transform ${showDestinations ? "rotate-180" : ""}`} />
               </Button>
+              
+              <AnimatePresence>
+                {showDestinations && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-3 w-72 max-w-[calc(100vw-2rem)] bg-[#121214] border border-white/10 rounded-2xl shadow-2xl z-[100] p-2 backdrop-blur-3xl"
+                  >
+                    <div className="px-3 py-3 text-[10px] font-black text-[#555] uppercase tracking-[0.2em] mb-1">
+                      Target Destination
+                    </div>
+                    <div className="space-y-1">
+                      {chats.map((chat) => (
+                        <button
+                          key={chat.id}
+                          onClick={() => {
+                            setSelectedChatId(chat.id);
+                            setShowDestinations(false);
+                            toast.success(`Broadcasting to ${chat.name}`);
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-3 rounded-xl transition-all group active:scale-[0.98] ${
+                            selectedChatId === chat.id 
+                              ? "bg-[#0088cc] text-white" 
+                              : "hover:bg-white/5 text-[#888] hover:text-white"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${selectedChatId === chat.id ? "bg-white/20" : "bg-white/5"}`}>
+                              {chat.type === 'private' ? <Monitor className="w-3.5 h-3.5 shrink-0" /> : 
+                               chat.type === 'channel' ? <Hash className="w-3.5 h-3.5 shrink-0" /> : 
+                               <Users className="w-3.5 h-3.5 shrink-0" />}
+                            </div>
+                            <span className="text-xs font-bold truncate tracking-tight">{chat.name}</span>
+                          </div>
+                          {selectedChatId === chat.id && <CheckCircle className="w-3 h-3" />}
+                        </button>
+                      ))}
+                    </div>
+                    {chats.length === 0 && (
+                      <div className="px-3 py-6 text-center text-[#444] text-[10px] font-bold">
+                        No targets found. Use /register in Telegram.
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             
             <Button 
@@ -250,6 +299,13 @@ export default function Home() {
               <Copy className="w-4 h-4 mr-2" />
               Copy
             </Button>
+
+            <button 
+              onClick={() => setShowSidebar(true)}
+              className={`w-10 h-10 flex items-center justify-center rounded-xl border border-white/10 transition-all hover:bg-white/10 ${showSidebar ? "bg-white/10" : "bg-white/5 text-[#888] hover:text-white"}`}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
           </motion.div>
         </header>
 
@@ -425,11 +481,11 @@ export default function Home() {
               <div className="p-8 pb-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-[#0088cc]/10 rounded-2xl flex items-center justify-center border border-[#0088cc]/20">
-                    <Menu className="w-5 h-5 text-[#0088cc]" />
+                    <Shield className="w-5 h-5 text-[#0088cc]" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold tracking-tight text-white">Relay Targets</h2>
-                    <p className="text-[10px] text-[#555] font-black uppercase tracking-widest">Active Destinations</p>
+                    <h2 className="text-lg font-bold tracking-tight text-white">System Menu</h2>
+                    <p className="text-[10px] text-[#555] font-black uppercase tracking-widest">Portal Controls</p>
                   </div>
                 </div>
                 <button 
@@ -440,52 +496,37 @@ export default function Home() {
                 </button>
               </div>
 
-              {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto px-8 py-6 space-y-3 custom-scrollbar">
-                {chats.map((chat) => (
-                  <button
-                    key={chat.id}
-                    onClick={() => {
-                      setSelectedChatId(chat.id);
-                      setShowSidebar(false);
-                      toast.success(`Target switched: ${chat.name}`);
-                    }}
-                    className={`w-full flex items-center justify-between px-5 py-5 rounded-2xl transition-all group active:scale-[0.97] border ${
-                      selectedChatId === chat.id 
-                        ? "bg-[#0088cc] border-[#0088cc] shadow-[0_8px_24px_-4px_rgba(0,136,204,0.4)] text-white" 
-                        : "bg-white/[0.02] border-white/5 hover:bg-white/5 text-[#888] hover:text-white hover:border-white/10"
-                    }`}
-                  >
-                    <div className="flex items-center gap-4 overflow-hidden">
-                      <div className={`w-11 h-11 rounded-1.5xl flex items-center justify-center transition-all ${
-                        selectedChatId === chat.id ? "bg-white/20" : "bg-white/5 group-hover:bg-white/10"
-                      }`}>
-                        {chat.type === 'private' ? <Monitor className="w-5 h-5" /> : 
-                         chat.type === 'channel' ? <Hash className="w-5 h-5" /> : 
-                         <Users className="w-5 h-5" />}
+              {/* Sidebar Content */}
+              <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 custom-scrollbar">
+                 <div className="space-y-2">
+                    <p className="text-[10px] font-black text-[#333] uppercase tracking-[0.2em] mb-4">Account</p>
+                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center gap-4 group hover:bg-white/[0.04] transition-colors cursor-pointer">
+                      <div className="w-10 h-10 rounded-xl bg-[#0088cc]/10 flex items-center justify-center text-[#0088cc]">
+                        <Users className="w-5 h-5" />
                       </div>
-                      <div className="text-left overflow-hidden">
-                        <div className="text-sm font-bold truncate leading-tight tracking-tight">{chat.name}</div>
-                        <div className={`text-[10px] font-bold uppercase tracking-widest opacity-60 mt-1`}>
-                          Type: {chat.type}
+                      <div>
+                        <div className="text-sm font-bold text-white">Verified User</div>
+                        <div className="text-[10px] text-[#555] font-bold uppercase tracking-widest">Current Session</div>
+                      </div>
+                    </div>
+                 </div>
+
+                 <div className="space-y-2">
+                    <p className="text-[10px] font-black text-[#333] uppercase tracking-[0.2em] mb-4">Configuration</p>
+                    {[
+                      { icon: <Shield className="w-4 h-4" />, label: "Security Settings", status: "Coming Soon" },
+                      { icon: <Terminal className="w-4 h-4" />, label: "API Console", status: "Coming Soon" },
+                      { icon: <ExternalLink className="w-4 h-4" />, label: "Bot Support", status: "Active" }
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-4 bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 rounded-2xl transition-all cursor-not-allowed group">
+                        <div className="flex items-center gap-3">
+                          <div className="text-[#444] group-hover:text-[#666]">{item.icon}</div>
+                          <span className="text-xs font-bold text-[#666] group-hover:text-[#888]">{item.label}</span>
                         </div>
+                        <span className="text-[9px] font-black uppercase text-[#333] px-2 py-0.5 border border-white/5 rounded-md">{item.status}</span>
                       </div>
-                    </div>
-                    {selectedChatId === chat.id && <CheckCircle className="w-4 h-4" />}
-                  </button>
-                ))}
-                
-                {chats.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-20 text-center px-6">
-                    <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mb-6">
-                      <Hash className="w-10 h-10 text-[#222]" />
-                    </div>
-                    <p className="text-sm font-bold text-[#444] leading-relaxed">
-                      No destinations found.<br/>
-                      Add the bot to a group and use <b>/register</b>.
-                    </p>
-                  </div>
-                )}
+                    ))}
+                 </div>
               </div>
 
               {/* Sidebar Footer */}
