@@ -139,15 +139,20 @@ export default function Home() {
             animate={{ opacity: 1, x: 0 }}
           >
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 bg-[#0088cc] rounded-2xl shadow-[0_0_20px_rgba(0,136,204,0.3)]">
-                <Shield className="w-6 h-6 text-white" />
+              <div className="p-2.5 bg-[#0088cc] rounded-2xl shadow-[0_0_20px_rgba(0,136,204,0.3)] flex items-center justify-center relative w-11 h-11">
+                <span className="text-white font-black text-2xl tracking-tighter relative z-10 transition-transform hover:scale-110">K</span>
+                <div className="absolute right-1 bottom-1 opacity-100 z-20">
+                   <div className="bg-white rounded-full p-0.5 shadow-md transform -rotate-12 hover:rotate-0 transition-transform">
+                      <Send className="w-3 h-3 text-[#0088cc]" />
+                   </div>
+                </div>
               </div>
               <h1 className="text-4xl font-extrabold tracking-tighter text-white">
-                KEND<span className="text-[#0088cc]">RELAY</span>
+                KEND<span className="text-[#0088cc]"> IT</span>
               </h1>
             </div>
             <p className="text-[#888] font-mono text-[11px] uppercase tracking-[0.4em]">
-              Secure Terminal Protocol // ID: {terminalId}
+              ID: {terminalId}
             </p>
           </motion.div>
 
@@ -181,12 +186,10 @@ export default function Home() {
           >
             <div className="flex justify-between items-center mb-6">
               <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#555] group-hover:text-[#888] transition-colors">
-                Buffered Message Stream
+                Message
               </span>
               <div className="flex items-center gap-4 text-[10px] font-mono text-[#555]">
                 <span>{message.length} <span className="opacity-50">CHARS</span></span>
-                <div className="w-px h-3 bg-white/10" />
-                <span>AES-256 <span className="opacity-50">SYNCED</span></span>
               </div>
             </div>
 
@@ -257,11 +260,7 @@ export default function Home() {
           <footer className="mt-auto pt-16 pb-8 flex flex-col md:flex-row justify-between items-center gap-4 text-[#444] transition-all">
             <div className="flex items-center gap-6">
               <span className="text-[10px] font-mono tracking-widest uppercase opacity-40 hover:opacity-100 cursor-default transition-opacity">
-                V3.1.2 // STABLE
-              </span>
-              <div className="w-1 h-1 bg-[#222] rounded-full" />
-              <span className="text-[10px] font-mono tracking-widest uppercase opacity-40 hover:opacity-100 cursor-default transition-opacity">
-                Latency: 142ms
+                STABLE
               </span>
             </div>
             
