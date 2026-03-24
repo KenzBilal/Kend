@@ -513,11 +513,21 @@ export default function Home() {
 
                  <div className="space-y-2">
                     <p className="text-[10px] font-black text-[#333] uppercase tracking-[0.2em] mb-4">Sharing</p>
-                    <a 
-                      href={window.location.origin}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between group hover:bg-[#0088cc]/10 hover:border-[#0088cc]/30 transition-all active:scale-[0.98] no-underline"
+                    <button 
+                      onClick={() => {
+                        const shareData = {
+                          title: 'Kend It - Secure Telegram Portal',
+                          text: 'Check out Kend It, the secure way to relay messages to Telegram!',
+                          url: window.location.origin
+                        };
+                        if (navigator.share) {
+                          navigator.share(shareData).catch(console.error);
+                        } else {
+                          navigator.clipboard.writeText(window.location.origin);
+                          toast.success("Invite link copied to clipboard");
+                        }
+                      }}
+                      className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between group hover:bg-[#0088cc]/10 hover:border-[#0088cc]/30 transition-all active:scale-[0.98] text-left"
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-[#0088cc]/10 flex items-center justify-center text-[#0088cc] group-hover:scale-110 transition-transform">
@@ -528,8 +538,8 @@ export default function Home() {
                           <div className="text-[10px] text-[#555] font-bold uppercase tracking-widest">Share Kend It portal</div>
                         </div>
                       </div>
-                      <ExternalLink className="w-4 h-4 text-[#333] group-hover:text-[#0088cc] transition-colors" />
-                    </a>
+                      <Copy className="w-4 h-4 text-[#333] group-hover:text-[#0088cc] transition-colors" />
+                    </button>
                  </div>
 
                  <div className="space-y-2">
