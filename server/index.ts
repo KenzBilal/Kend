@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import { handleSend } from "./routes/send.js";
 import { handleWebhook } from "./routes/webhook.js";
 import { handleCleanup } from "./routes/cleanup.js";
+import { handleGetChats } from "./routes/chats.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,6 +23,7 @@ async function startServer() {
   app.post("/api/send", handleSend);
   app.post("/api/webhook", handleWebhook);
   app.post("/api/cleanup", handleCleanup);
+  app.get("/api/chats/:token", handleGetChats);
 
   // Health check endpoint
   app.get("/api/health", (_req, res) => {

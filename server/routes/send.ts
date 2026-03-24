@@ -64,14 +64,40 @@ export async function handleSend(req: Request, res: Response) {
   }
 
   try {
-    // Validate token and get mapped chatId from Redis
-    const chatId = await redis.get(`token:${token}`) as string | null;
+    // Validate token and get mapped chats from Redis
+    const data = await redis.get(`token:${token}`) as string | null;
 
-    if (!chatId) {
+    if (!data) {
       console.warn(`Unauthorized access attempt with token: ${token.substring(0, 8)}...`);
       return res.status(401).json({ 
         error: "Unauthorized: Invalid or expired token. Please start the bot again to get a new link." 
       });
+    }
+
+    let chats = [];
+    try {
+      chats = JSON.parse(data);
+      if (!Array.isArray(chats)) {
+        chats = [{ id: data, name: "Personal", type: "private" }];
+      }
+    } catch (e) {
+      // Old format (just a string)
+      chats = [{ id: data, name: "Personal", type: "private" }];
+    }
+
+    // Determine target chatId
+    const targetChatId = (req.body as any).targetChatId;
+    let finalChatId: string;
+
+    if (targetChatId) {
+      const allowedChat = chats.find(c => c.id === targetChatId.toString());
+      if (!allowedChat) {
+        return res.status(403).json({ error: "Forbidden: Destination chat not linked to this token" });
+      }
+      finalChatId = targetChatId.toString();
+    } else {
+      // Default to first chat (usually Personal)
+      finalChatId = chats[0].id;
     }
 
     // Split message into chunks if necessary
@@ -79,7 +105,7 @@ export async function handleSend(req: Request, res: Response) {
     const parseMode = (req.body as any).parseMode || "HTML";
 
     // Send all chunks
-    const results = await sendMultipartMessage(botToken, chatId, chunks, parseMode);
+    const results = await sendMultipartMessage(botToken, finalChatId, chunks, parseMode);
 
     // Track message IDs for auto-deletion (7 days, though Telegram limits to 48h for bots)
     const cleanupScore = Date.now() + (1000 * 60 * 60 * 24 * 7);
@@ -87,7 +113,7 @@ export async function handleSend(req: Request, res: Response) {
       if (result.ok && result.result) {
         await redis.zadd("cleanup:messages", {
           score: cleanupScore,
-          member: `${chatId}:${result.result.message_id}`,
+          member: `${finalChatId}:${result.result.message_id}`,
         });
       }
     }

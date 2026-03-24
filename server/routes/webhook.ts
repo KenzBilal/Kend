@@ -29,8 +29,13 @@ async function handleStart(botToken: string, chatId: number | string) {
     if (!token) {
       token = generateToken();
       const EXPIRY_SECONDS = 60 * 60 * 24 * 30 * 6; // 6 months
-      // store mapping
-      await redis.set(`token:${token}`, chatId.toString(), { ex: EXPIRY_SECONDS });
+      
+      const initialChats = [
+        { id: chatId.toString(), name: "Personal", type: "private" }
+      ];
+      
+      // store mapping as JSON
+      await redis.set(`token:${token}`, JSON.stringify(initialChats), { ex: EXPIRY_SECONDS });
       // reverse mapping
       await redis.set(`user:${chatId}`, token, { ex: EXPIRY_SECONDS });
     }
@@ -45,7 +50,8 @@ async function handleStart(botToken: string, chatId: number | string) {
       `🚀 <b>Your Private Message Portal is Ready!</b>\n\n` +
       `Use this unique link to send messages from any device:\n\n` +
       `<code>${link}</code>\n\n` +
-      `<b>Security Note:</b> Never share this link. It allows anyone to send messages to this chat.`,
+      `<b>Multi-Chat Support:</b>\n` +
+      `Add this bot to any group/channel and type <code>/register ${token}</code> to add it as a destination.`,
       "HTML",
       {
         inline_keyboard: [
@@ -55,7 +61,50 @@ async function handleStart(botToken: string, chatId: number | string) {
     );
   } catch (err) {
     console.error("❌ Error in handleStart:", err);
-    await sendTelegramMessage(botToken, chatId, "❌ <b>Error:</b> Failed to generate your portal link. This is usually due to a database connection issue.");
+    await sendTelegramMessage(botToken, chatId, "❌ <b>Error:</b> Failed to generate your portal link.");
+  }
+}
+
+async function handleRegister(botToken: string, chatId: number | string, token: string, chatTitle: string, chatType: string) {
+  try {
+    const existingData = await redis.get(`token:${token}`) as string | null;
+    if (!existingData) {
+      await sendTelegramMessage(botToken, chatId, "❌ <b>Error:</b> Invalid or expired token. Please get your token from your private chat's /start command.");
+      return;
+    }
+
+    let chats: any[] = [];
+    try {
+      chats = JSON.parse(existingData);
+      if (!Array.isArray(chats)) {
+        // Migration: convert old single-id string to array
+        chats = [{ id: existingData, name: "Personal", type: "private" }];
+      }
+    } catch (e) {
+      // Migration for old format
+      chats = [{ id: existingData, name: "Personal", type: "private" }];
+    }
+
+    // Check if chat already exists
+    if (chats.find(c => c.id === chatId.toString())) {
+      await sendTelegramMessage(botToken, chatId, "✅ This chat is already registered to your portal.");
+      return;
+    }
+
+    // Add new chat
+    chats.push({
+      id: chatId.toString(),
+      name: chatTitle || "Unnamed Chat",
+      type: chatType
+    });
+
+    const EXPIRY_SECONDS = 60 * 60 * 24 * 30 * 6; // Refresh expiry
+    await redis.set(`token:${token}`, JSON.stringify(chats), { ex: EXPIRY_SECONDS });
+
+    await sendTelegramMessage(botToken, chatId, `✅ <b>Registration Successful!</b>\n\nThis chat "<b>${chatTitle}</b>" has been added to your portal.`);
+  } catch (err) {
+    console.error("❌ Error in handleRegister:", err);
+    await sendTelegramMessage(botToken, chatId, "❌ <b>Error:</b> Failed to register this chat to the portal.");
   }
 }
 
@@ -121,10 +170,19 @@ export async function handleWebhook(req: Request, res: Response) {
 
     if (update.message) {
       const { chat, text } = update.message;
+      if (!text) return res.status(200).json({ ok: true });
+
       if (text === "/start") {
         await handleStart(botToken, chat.id);
-      } else {
-        console.log(`Bot received message in chat ${chat.id}`);
+      } else if (text.startsWith("/register")) {
+        const parts = text.split(" ");
+        if (parts.length < 2) {
+          await sendTelegramMessage(botToken, chat.id, "⚠️ Please provide your token: <code>/register YOUR_TOKEN</code>");
+        } else {
+          const token = parts[1].trim();
+          const title = (chat as any).title || (chat as any).first_name || "Unknown";
+          await handleRegister(botToken, chat.id, token, title, (chat as any).type);
+        }
       }
     }
 

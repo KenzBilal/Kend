@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
-import { Send, CheckCircle, AlertCircle, Loader2, X, Trash2, Copy, ExternalLink, Shield, Type, Code, Terminal, Hash } from "lucide-react";
+import { Send, CheckCircle, AlertCircle, Loader2, X, Trash2, Copy, ExternalLink, Shield, Type, Code, Terminal, Hash, Menu, ChevronDown, Users, MessageSquare, Monitor } from "lucide-react";
 import { useParams } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -26,6 +26,9 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [parseMode, setParseMode] = useState<"HTML" | "MarkdownV2">("HTML");
   const [copyClean, setCopyClean] = useState(false);
+  const [chats, setChats] = useState<any[]>([]);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [showDestinations, setShowDestinations] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize textarea
@@ -45,6 +48,26 @@ export default function Home() {
       handleSend();
     }
   };
+
+  useEffect(() => {
+    if (token) {
+      const fetchChats = async () => {
+        try {
+          const res = await fetch(`/api/chats/${token}`);
+          const data = await res.json();
+          if (data.success) {
+            setChats(data.chats);
+            if (data.chats.length > 0 && !selectedChatId) {
+              setSelectedChatId(data.chats[0].id);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch chats:", err);
+        }
+      };
+      fetchChats();
+    }
+  }, [token]);
 
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -105,7 +128,12 @@ export default function Home() {
       const res = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: finalMessage, token, parseMode: finalParseMode }),
+        body: JSON.stringify({ 
+          text: finalMessage, 
+          token, 
+          parseMode: finalParseMode,
+          targetChatId: selectedChatId 
+        }),
       });
 
       const data = await res.json();
@@ -196,20 +224,78 @@ export default function Home() {
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex gap-3"
+            className="flex gap-3 relative"
           >
-            <Button 
-              variant="outline" 
-              onClick={copyLink}
-              className="bg-white/5 border-white/10 hover:bg-white/10 text-xs font-bold uppercase tracking-widest h-10 px-5 rounded-xl transition-all"
-            >
-              <Copy className="w-4 h-4 mr-2" />
-              Copy Portal
-            </Button>
-            <div className="flex items-center gap-2 px-4 h-10 bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] font-bold uppercase tracking-widest rounded-xl">
+            <div className="hidden sm:flex items-center gap-2 px-4 h-10 bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] font-bold uppercase tracking-widest rounded-xl">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_#22c55e]" />
               Live Link
             </div>
+            
+            <div className="relative">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDestinations(!showDestinations)}
+                className={`border-white/10 hover:bg-white/10 text-xs font-bold uppercase tracking-widest h-10 px-4 rounded-xl transition-all ${showDestinations ? "bg-white/10" : "bg-white/5"}`}
+              >
+                <Menu className="w-4 h-4 mr-2" />
+                Dests
+                <ChevronDown className={`w-3 h-3 ml-2 transition-transform ${showDestinations ? "rotate-180" : ""}`} />
+              </Button>
+              
+              <AnimatePresence>
+                {showDestinations && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-3 w-64 bg-[#151517] border border-white/10 rounded-2xl shadow-2xl z-[100] p-2 backdrop-blur-3xl"
+                  >
+                    <div className="px-3 py-2 text-[10px] font-bold text-[#555] uppercase tracking-[0.2em] mb-1">
+                      Select Destination
+                    </div>
+                    <div className="space-y-1">
+                      {chats.map((chat) => (
+                        <button
+                          key={chat.id}
+                          onClick={() => {
+                            setSelectedChatId(chat.id);
+                            setShowDestinations(false);
+                            toast.success(`Broadcasting to ${chat.name}`);
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-3 rounded-xl transition-all group ${
+                            selectedChatId === chat.id 
+                              ? "bg-[#0088cc] text-white" 
+                              : "hover:bg-white/5 text-[#888] hover:text-white"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            {chat.type === 'private' ? <Monitor className="w-4 h-4 shrink-0" /> : 
+                             chat.type === 'channel' ? <Hash className="w-4 h-4 shrink-0" /> : 
+                             <Users className="w-4 h-4 shrink-0" />}
+                            <span className="text-xs font-bold truncate tracking-tight">{chat.name}</span>
+                          </div>
+                          {selectedChatId === chat.id && <CheckCircle className="w-3 h-3" />}
+                        </button>
+                      ))}
+                    </div>
+                    {chats.length === 0 && (
+                      <div className="px-3 py-4 text-center text-[#555] text-[10px] font-bold">
+                        No destinations found
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              onClick={copyLink}
+              className="bg-white/5 border-white/10 hover:bg-white/10 text-xs font-bold uppercase tracking-widest h-10 px-5 rounded-xl transition-all hidden md:flex"
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Copy
+            </Button>
           </motion.div>
         </header>
 
